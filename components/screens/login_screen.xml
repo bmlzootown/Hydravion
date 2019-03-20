@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="login_screen" extends="group" initialFocus="username">
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <interface>
+    <field id="next" type="string" />
+    <field id="skip" type="string" />
+  </interface>
+  <children>
+    <Label
+      id="login_text"
+      font="font:LargeBoldSystemFont"
+      horizAlign="center"
+      text = "Login"
+      translation="[525,50]" />
+    <Button
+      id="username"
+      iconUri=""
+      focusedIconUri=""
+      textColor="0xFFFFFF"
+      height="75"
+      focusedTextColor="0x111111"
+      text="Username"
+      translation="[515,170]" />
+
+    <Button
+      id="password"
+      iconUri=""
+      focusedIconUri=""
+      textColor="0xFFFFFF"
+      height="75"
+      focusedTextColor="0x111111"
+      text="Password"
+      translation="[515,250]" />
+
+    <Button
+      id="login"
+      iconUri=""
+      focusedIconUri=""
+      textColor="0xFFFFFF"
+      height="75"
+      focusedTextColor="0x111111"
+      text="Login"
+      translation="[515,350]" />
+
+    <Keyboard
+      id="inputKeyboard"
+      text=""
+      focusedKeyColor="0xFFFFFFFF"
+      translation="[169,417]" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/screens/login_screen.brs" />
+</component>

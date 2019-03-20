@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="category_screen" extends="group" >
+  <interface>
+    <field id="category_selected" type="assocarray" alias="category_list.itemSelected" />
+  </interface>
+  <children>
+    <Poster
+      id="thumbnail"
+      uri="pkg:/images/asterisk.png"
+			width="30"
+      height="30"
+      translation="[1230,20]"
+			opacity="1" />
+    <Label
+      id="env"
+      text="Subscriptions:"
+      translation="[75,150]" />
+    <RadioButtonList
+      id="category_list"
+      translation="[100,200]"
+      itemSize="[400,48]" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/screens/category_screen.brs" />
+</component>

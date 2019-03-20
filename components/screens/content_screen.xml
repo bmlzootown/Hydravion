@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component   name="content_screen"   extends="Group"   initialFocus="content_grid" >
+    <script type="text/brightscript" uri="pkg:/components/screens/content_screen.brs" />
+    <interface>
+      <field id="feed_data"
+        type="String"
+        onChange="onFeedChanged"
+        />
+      <field id="feed_name"
+        type="String"
+        />
+      <field id="content_selected"
+        type="assocarray"
+        alias="content_grid.itemSelected"
+        />
+    </interface>
+    <children>
+        <Poster
+          id="thumbnail"
+          uri="pkg:/images/asterisk.png"
+          width="30"
+          height="30"
+          translation="[1230,20]"
+          opacity="1" />
+        <Label
+          translation="[75, 75]"
+          id="header"
+          color="0xFFFFFF"
+          font="font:LargeBoldSystemFont"
+          text="" />
+        <PosterGrid
+          id="content_grid"
+          translation="[100,220]"
+          basePosterSize="[500,280]"
+          itemSpacing="[110,110]"
+          caption1NumLines="1"
+          caption2NumLines="1"
+          numRows="1"
+          numColumns="2" />
+    </children>
+</component>

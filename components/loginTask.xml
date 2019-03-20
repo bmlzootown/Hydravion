@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="loginTask" extends="task" >
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+    <interface>
+      <field id="username" type="string" />
+      <field id="password" type="string" />
+      <field id="cookies" type="string" />
+      <field id="error" type="string" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/loginTask.brs" />
+</component>
