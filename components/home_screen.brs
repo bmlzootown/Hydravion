@@ -64,6 +64,7 @@ sub initializeVideoPlayer()
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
   m.videoplayer.observeField("state", "onPlayerStateChanged")
+  m.videoindex = 0
 end sub
 
 sub initializeLivePlayer()
@@ -84,6 +85,23 @@ sub onPlayerStateChanged(obj)
   state = obj.getData()
   if state = "finished"
     closeVideo()
+  else if state = "error"
+    ? m.videoplayer.errorCode
+    if m.videoplayer.errorCode = -3
+      m.videoindex = m.videoindex + 1
+      supported = m.device.GetSupportedGraphicsResolutions()
+      if supported.Count() > m.videoindex
+        height = strI(supported[supported.Count() - 1 - m.videoindex].height)
+        m.video_task = CreateObject("roSGNode", "urlTask")
+        url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
+        ? url
+        m.video_task.setField("url", url)
+        m.video_task.observeField("response", "onPlayVideo")
+        m.video_task.control = "RUN"
+      else
+        showVideoError()
+      end if
+    end if
   end if
 end sub
 
@@ -96,6 +114,15 @@ sub onLivePlayerStateChanged(obj)
   else if state = "finished"
     closeStream()
   end if
+end sub
+
+sub showVideoError()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Error"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Video cannot be played!"
+  m.top.getScene().dialog.optionsDialog = true
 end sub
 
 sub showLiveError()

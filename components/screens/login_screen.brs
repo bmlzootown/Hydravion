@@ -47,7 +47,53 @@ end sub
 sub onCookies(obj)
   'print "login_screen passed?"
   'print obj
+  print "passed login_screen"
+  m.needstwoFA = m.login_task.needstwoFA
+  if m.needstwoFA = true
+    ? m.needstwoFA
+    preparetwoFALogin()
+  else
+    ? "Couldn't find needs2FA"
+    m.top.next = "beep"
+  end if
+end sub
+
+sub preparetwoFALogin()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "2FactorAuthentication"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "2FA code is needed to continue!"
+  m.top.getScene().dialog.buttons = ["OK"]
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","getCodeKeyboard")
+end sub
+
+sub getCodeKeyboard()
+  m.top.getScene().dialog.close = true
+  m.field = "twoFA"
+  m.keyboard.text = ""
+  m.keyboard.textEditBox.secureMode = false
+  m.keyboard.visible = true
+  m.keyboard.setFocus(true)
+end sub
+
+sub dotwoFALogin()
+  token = m.twoFA
+  m.twoFA_task = createObject("roSGNode", "twoFATask")
+  m.twoFA_task.setField("token", token)
+  m.twoFA_task.observeField("updatedCookies", "updatedCs")
+  m.twoFA_task.observeField("error", "ontwoFAError")
+  m.twoFA_task.control = "RUN"
+end sub
+
+sub updatedCs()
   m.top.next = "beep"
+end sub
+
+sub ontwoFAError(obj)
+  code = obj.getData()
+  getCodeKeyboard()
 end sub
 
 sub onError(obj)
@@ -126,6 +172,13 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
         m.keyboard.visible = false
         m.password.setFocus(true)
         return true
+      else if m.field = "twoFA"
+        if m.keyboard.text <> ""
+          m.twoFA = m.keyboard.text
+          m.keyboard.visible = false
+          dotwoFALogin()
+          return true
+        end if
       end if
     else if key = "back"
       if m.keyboard.visible = true
@@ -146,6 +199,13 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
           m.keyboard.visible = false
           m.password.setFocus(true)
           return true
+        else if m.field = "twoFA"
+          if m.keyboard.text <> ""
+            m.twoFA = m.keyboard.text
+            m.keyboard.visible = false
+            dotwoFALogin()
+            return true
+          end if
         end if
       else
         m.username.setFocus(true)

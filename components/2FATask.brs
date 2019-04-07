@@ -3,7 +3,12 @@ sub init()
 end sub
 
 function request()
-  url = "https://www.floatplane.com/api/auth/login"
+  registry = RegistryUtil()
+  cfduid = registry.read("cfduid", "hydravion")
+  sails = registry.read("sails", "hydravion")
+  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
+
+  url = "https://www.floatplane.com/api/auth/checkFor2faLogin"
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
   port = CreateObject("roMessagePort")
@@ -11,16 +16,12 @@ function request()
   https.SetUrl(url)
   https.setCertificatesFile("common:/certs/ca-bundle.crt")
   https.AddHeader("Content-Type", "application/json")
-  https.AddHeader("Accept", "application/json")
+  https.AddHeader("Cookie", cookies)
   https.initClientCertificates()
 
   data = {
-    username: m.top.username,
-    password: m.top.password
+    token: m.top.token
   }
-
-  'print m.top.username
-  'print m.top.password
 
   parsedJson = FormatJson(data)
 
@@ -30,18 +31,11 @@ function request()
       if type(event) = "roUrlEvent"
         code = event.GetResponseCode()
         if code = 200
-          response = ParseJSON(event.GetString())
           cookies = event.GetResponseHeadersArray()
-          cfduid = GetCookieValueFromHeaders("__cfduid", cookies)
           sailssid = GetCookieValueFromHeaders("sails.sid", cookies)
-          if response.needs2FA = true
-            m.top.needstwoFA = true
-          end if
-          registry = RegistryUtil()
-          registry.write("cfduid", cfduid, "hydravion")
           registry.write("sails", sailssid, "hydravion")
-          'print "loginTask done!"
-          m.top.cookies = "boop"
+          'print "2FATask done!"
+          m.top.updatedCookies = "boop"
         else
           m.top.error = code
         end if
