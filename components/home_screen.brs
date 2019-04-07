@@ -6,7 +6,9 @@ function init()
   m.login_screen = m.top.findNode("login_screen")
 
   m.videoplayer = m.top.findNode("videoplayer")
+  m.liveplayer = m.top.findNode("liveplayer")
   initializeVideoPlayer()
+  initializeLivePlayer()
 
   m.login_screen.observeField("next", "onNext")
   m.category_screen.observeField("category_selected", "onCategorySelected")
@@ -64,6 +66,15 @@ sub initializeVideoPlayer()
   m.videoplayer.observeField("state", "onPlayerStateChanged")
 end sub
 
+sub initializeLivePlayer()
+  m.liveplayer.EnableCookies()
+	m.liveplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
+	m.liveplayer.initClientCertificates()
+  m.liveplayer.notificationInterval = 1
+  m.liveplayer.observeField("position", "onPlayerPositionChanged")
+  m.liveplayer.observeField("state", "onLivePlayerStateChanged")
+end sub
+
 sub onPlayerPositionChanged(obj)
   ? "Position: ", obj.getData()
 end sub
@@ -76,10 +87,36 @@ sub onPlayerStateChanged(obj)
   end if
 end sub
 
+sub onLivePlayerStateChanged(obj)
+  ? "State: ", obj.getData()
+  state = obj.getData()
+  if state = "error"
+    ? m.liveplayer.errorMsg
+    showLiveError()
+  else if state = "finished"
+    closeStream()
+  end if
+end sub
+
+sub showLiveError()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Error"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Live stream not found!"
+  m.top.getScene().dialog.optionsDialog = true
+end sub
+
 sub closeVideo()
   m.videoplayer.control = "stop"
   m.videoplayer.visible = false
   m.details_screen.visible = true
+end sub
+
+sub closeStream()
+  m.liveplayer.control = "stop"
+  m.liveplayer.visible = false
+  m.content_screen.visible = true
 end sub
 
 sub onContentSelected(obj)
@@ -127,6 +164,25 @@ sub onCategoryResponse(obj)
   m.category_screen.setFocus(true)
 end sub
 
+sub showOptions()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Options"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Select Option"
+  m.top.getScene().dialog.buttons = ["Watch Stream","Logout"]
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","handleOptions")
+end sub
+
+sub handleOptions()
+  if m.top.getScene().dialog.buttonSelected = 0
+    doLive()
+  else if m.top.getScene().dialog.buttonSelected = 1
+    showLogoutDialog()
+  end if
+end sub
+
 sub showLogoutDialog()
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   m.top.getScene().dialog.title = "Logout?"
@@ -136,6 +192,17 @@ sub showLogoutDialog()
   m.top.getScene().dialog.buttons = ["OK"]
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.observeField("buttonSelected","doLogout")
+end sub
+
+sub showLiveDialog()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Play Live Stream?"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Press OK to attempt to play live stream"
+  m.top.getScene().dialog.buttons = ["OK"]
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","doLive")
 end sub
 
 sub doLogout()
@@ -152,6 +219,37 @@ sub doLogout()
   m.login_screen.findNode("username").setFocus(true)
   m.login_screen.findNode("username").text = "username"
   m.login_screen.findNode("password").text = "password"
+end sub
+
+sub doLive()
+  json = m.content_screen.getField("feed_data")
+  feed = ParseJSON(json)
+  chanid = feed[0].creator
+  url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + chanid + ""
+  m.chan_task = createObject("roSGNode", "urlTask")
+  m.chan_task.setField("url", url)
+  m.chan_task.observeField("response", "doLiveStuff")
+  m.chan_task.control = "RUN"
+end sub
+
+sub doLiveStuff(obj)
+  m.top.getScene().dialog.close = true
+  json = obj.getData()
+  feed = ParseJSON(json)
+  liveUrl = feed[0].livestream.streamPath
+  vidUrl = "https://cdn1.floatplane.com" + liveUrl + "/playlist.m3u8"
+
+  videoContent = createObject("roSGNode", "ContentNode")
+  videoContent.url = vidURL
+  videoContent.quality = true
+  videoContent.streamformat = "big-hls"
+
+  m.content_screen.visible = false
+  m.liveplayer.visible = true
+  m.liveplayer.setFocus(true)
+  'm.liveplayer.content = vidUrl
+  m.liveplayer.content = videoContent
+  m.liveplayer.control = "play"
 end sub
 
 function onKeyEvent(key, press) as Boolean
@@ -179,8 +277,21 @@ function onKeyEvent(key, press) as Boolean
     end if
   else if key = "options" and press
     if m.videoplayer.visible = false
-      showLogoutDialog()
+      if m.content_screen.visible = true
+        showOptions()
+      else
+        showLogoutDialog()
+      end if
+      'showLogoutDialog()
+      'showOptions()
       return true
+    end if
+  else if key = "play" and press
+    if m.videoplayer.visible = false
+      if m.content_screen.visible = true
+        showLiveDialog()
+        return true
+      end if
     end if
   end if
   return false

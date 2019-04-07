@@ -22,6 +22,10 @@
       id="videoplayer"
       visible="false"
       translation="[0,0]" />
+    <Video
+      id="liveplayer"
+      visible="false"
+      translation="[0,0]" />
   </children>
   <interface>
     <field id="subscriptions" type="string" onChange="onCategoryResponse" />
