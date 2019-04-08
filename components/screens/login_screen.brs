@@ -207,9 +207,6 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
             return true
           end if
         end if
-      else
-        m.username.setFocus(true)
-        return true
       end if
     else if key = "ok"
       return true

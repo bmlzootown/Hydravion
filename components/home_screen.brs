@@ -202,6 +202,36 @@ sub showOptions()
   m.top.getScene().dialog.observeField("buttonSelected","handleOptions")
 end sub
 
+sub showDetailOptions()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Resolution"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Select Stream Resolution"
+  m.top.getScene().dialog.buttons = ["1080","720", "480", "360"]
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","handleDetailOptions")
+end sub
+
+sub handleDetailOptions()
+  url = ""
+  m.video_task = CreateObject("roSGNode", "urlTask")
+  if m.top.getScene().dialog.buttonSelected = 0
+    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=1080"
+  else if m.top.getScene().dialog.buttonSelected = 1
+    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=720"
+  else if m.top.getScene().dialog.buttonSelected = 2
+    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=480"
+  else if m.top.getScene().dialog.buttonSelected = 3
+    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=360"
+  end if
+  m.top.getScene().dialog.close = true
+  ? url
+  m.video_task.setField("url", url)
+  m.video_task.observeField("response", "onPlayVideo")
+  m.video_task.control = "RUN"
+end sub
+
 sub handleOptions()
   if m.top.getScene().dialog.buttonSelected = 0
     doLive()
@@ -297,15 +327,13 @@ function onKeyEvent(key, press) as Boolean
       m.category_screen.visible = true
       m.category_screen.setFocus(true)
       return true
-    else if m.login_screen.visible
-      m.login_screen.visible = true
-      m.login_screen.setFocus(true)
-      return true
     end if
   else if key = "options" and press
     if m.videoplayer.visible = false
       if m.content_screen.visible = true
         showOptions()
+      else if m.details_screen.visible = true
+        showDetailOptions()
       else
         showLogoutDialog()
       end if
