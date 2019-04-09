@@ -4,10 +4,12 @@
     <interface>
       <field id="feed_data"
         type="String"
-        onChange="onFeedChanged"
         />
       <field id="feed_name"
         type="String"
+        />
+      <field id="page"
+        type="Integer"
         />
       <field id="content_selected"
         type="assocarray"

@@ -5,6 +5,8 @@ function init()
   m.details_screen = m.top.findNode("details_screen")
   m.login_screen = m.top.findNode("login_screen")
 
+  m.feedpage = 0
+
   m.videoplayer = m.top.findNode("videoplayer")
   m.liveplayer = m.top.findNode("liveplayer")
   initializeVideoPlayer()
@@ -42,7 +44,7 @@ sub onPlayButtonPressed(obj)
   height = strI(supported[supported.Count() - 1].height)
   m.video_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
-  ? url
+  '? url
   m.video_task.setField("url", url)
   m.video_task.observeField("response", "onPlayVideo")
   m.video_task.control = "RUN"
@@ -77,16 +79,16 @@ sub initializeLivePlayer()
 end sub
 
 sub onPlayerPositionChanged(obj)
-  ? "Position: ", obj.getData()
+  '? "Position: ", obj.getData()
 end sub
 
 sub onPlayerStateChanged(obj)
-  ? "State: ", obj.getData()
+  '? "State: ", obj.getData()
   state = obj.getData()
   if state = "finished"
     closeVideo()
   else if state = "error"
-    ? m.videoplayer.errorCode
+    '? m.videoplayer.errorCode
     if m.videoplayer.errorCode = -3
       m.videoindex = m.videoindex + 1
       supported = m.device.GetSupportedGraphicsResolutions()
@@ -94,7 +96,7 @@ sub onPlayerStateChanged(obj)
         height = strI(supported[supported.Count() - 1 - m.videoindex].height)
         m.video_task = CreateObject("roSGNode", "urlTask")
         url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
-        ? url
+        '? url
         m.video_task.setField("url", url)
         m.video_task.observeField("response", "onPlayVideo")
         m.video_task.control = "RUN"
@@ -106,10 +108,10 @@ sub onPlayerStateChanged(obj)
 end sub
 
 sub onLivePlayerStateChanged(obj)
-  ? "State: ", obj.getData()
+  '? "State: ", obj.getData()
   state = obj.getData()
   if state = "error"
-    ? m.liveplayer.errorMsg
+    '? m.liveplayer.errorMsg
     showLiveError()
   else if state = "finished"
     closeStream()
@@ -149,9 +151,22 @@ end sub
 sub onContentSelected(obj)
   selected_index = obj.getData()
   m.selected_media = m.content_screen.findNode("content_grid").content.getChild(selected_index)
-  m.details_screen.content = m.selected_media
-  m.content_screen.visible = false
-  m.details_screen.visible = true
+  if m.selected_media.title = "nextpage"
+    '? "next page"
+    m.feedpage = m.feedpage + 1
+    loadFeed(m.feedurl, m.feedpage)
+  else if m.selected_media.title = "backpage"
+    '? "back page"
+    if m.feedpage <> 0
+      m.feedpage = m.feedpage - 1
+      loadFeed(m.feedurl, m.feedpage)
+    end if
+  else
+    '? "real video selected"
+    m.details_screen.content = m.selected_media
+    m.content_screen.visible = false
+    m.details_screen.visible = true
+  end if
 end sub
 
 sub onCategorySelected(obj)
@@ -159,21 +174,34 @@ sub onCategorySelected(obj)
   item = list.content.getChild(obj.getData())
   ' Load feed from here for specific sub
   m.content_screen.setField("feed_name", item.title)
-  loadFeed(item.feed_url)
+  loadFeed(item.feed_url, 0)
 end sub
 
-sub loadFeed(url)
+sub loadFeed(url, page)
+  after = 20 * page
+  newurl = url + "&fetchAfter=" + after.ToStr() + ""
+  ''? newurl
   m.feed_task = createObject("roSGNode", "urlTask")
-  m.feed_task.setField("url", url)
+  m.feed_task.setField("url", newurl)
   m.feed_task.observeField("response", "onFeedResponse")
   m.feed_task.control = "RUN"
+  m.feedpage = page
+  m.feedurl = url
+  if page <> 0
+    '? "Next page loading..."
+  end if
 end sub
 
 sub onFeedResponse(obj)
   unparsed_json = obj.getData()
+  m.content_screen.setField("page", m.feedpage)
   m.content_screen.setField("feed_data", unparsed_json)
   m.category_screen.visible = false
   m.content_screen.visible = true
+  if m.feedpage <> 0
+    '? "Next page (feed) loaded!"
+    ''? unparsed_json
+  end if
 end sub
 
 sub onCategoryResponse(obj)
@@ -226,7 +254,7 @@ sub handleDetailOptions()
     url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=360"
   end if
   m.top.getScene().dialog.close = true
-  ? url
+  '? url
   m.video_task.setField("url", url)
   m.video_task.observeField("response", "onPlayVideo")
   m.video_task.control = "RUN"
