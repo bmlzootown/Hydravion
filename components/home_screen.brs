@@ -45,6 +45,7 @@ sub onPlayButtonPressed(obj)
   m.video_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
   '? url
+  '? height
   m.video_task.setField("url", url)
   m.video_task.observeField("response", "onPlayVideo")
   m.video_task.control = "RUN"
@@ -55,14 +56,21 @@ sub onPlayVideo(obj)
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
   m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
+  ? m.selected_media.url
   m.videoplayer.content = m.selected_media
   m.videoplayer.control = "play"
 end sub
 
 sub initializeVideoPlayer()
+  registry = RegistryUtil()
+  cfduid = registry.read("cfduid", "hydravion")
+  sails = registry.read("sails", "hydravion")
+  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
   m.videoplayer.EnableCookies()
 	m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
 	m.videoplayer.initClientCertificates()
+  m.videoplayer.AddHeader("Accept", "application/json")
+  m.videoplayer.AddHeader("Cookie", cookies)
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
   m.videoplayer.observeField("state", "onPlayerStateChanged")
@@ -70,9 +78,15 @@ sub initializeVideoPlayer()
 end sub
 
 sub initializeLivePlayer()
+  registry = RegistryUtil()
+  cfduid = registry.read("cfduid", "hydravion")
+  sails = registry.read("sails", "hydravion")
+  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
   m.liveplayer.EnableCookies()
 	m.liveplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
 	m.liveplayer.initClientCertificates()
+  m.liveplayer.AddHeader("Accept", "application/json")
+  m.liveplayer.AddHeader("Cookie", cookies)
   m.liveplayer.notificationInterval = 1
   m.liveplayer.observeField("position", "onPlayerPositionChanged")
   m.liveplayer.observeField("state", "onLivePlayerStateChanged")
@@ -89,6 +103,7 @@ sub onPlayerStateChanged(obj)
     closeVideo()
   else if state = "error"
     '? m.videoplayer.errorCode
+    '? m.videoplayer.errorMsg
     if m.videoplayer.errorCode = -3
       m.videoindex = m.videoindex + 1
       supported = m.device.GetSupportedGraphicsResolutions()
@@ -180,7 +195,7 @@ end sub
 sub loadFeed(url, page)
   after = 20 * page
   newurl = url + "&fetchAfter=" + after.ToStr() + ""
-  ''? newurl
+  '? newurl
   m.feed_task = createObject("roSGNode", "urlTask")
   m.feed_task.setField("url", newurl)
   m.feed_task.observeField("response", "onFeedResponse")
@@ -200,7 +215,7 @@ sub onFeedResponse(obj)
   m.content_screen.visible = true
   if m.feedpage <> 0
     '? "Next page (feed) loaded!"
-    ''? unparsed_json
+    '? unparsed_json
   end if
 end sub
 
@@ -322,11 +337,21 @@ sub doLiveStuff(obj)
   json = obj.getData()
   feed = ParseJSON(json)
   liveUrl = feed[0].livestream.streamPath
-  vidUrl = "https://cdn1.floatplane.com" + liveUrl + "/playlist.m3u8"
+  vidUrl = liveUrl + "/playlist.m3u8"
+
+  m.edge_task = createObject("roSGNode", "edgesTask")
+  m.edge_task.setField("url", "https://www.floatplane.com/api/edges")
+  m.edge_task.setField("liveUrl", vidUrl)
+  m.edge_task.observeField("response", "doMoreLiveStuff")
+  m.edge_task.control = "RUN"
+end sub
+
+sub doMoreLiveStuff(obj)
+  vidUrl = obj.getData()
+  '? vidUrl
 
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = vidURL
-  videoContent.quality = true
   videoContent.streamformat = "big-hls"
 
   m.content_screen.visible = false
