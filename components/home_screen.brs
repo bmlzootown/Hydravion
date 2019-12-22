@@ -9,8 +9,6 @@ function init()
 
   m.videoplayer = m.top.findNode("videoplayer")
   m.liveplayer = m.top.findNode("liveplayer")
-  initializeVideoPlayer()
-  initializeLivePlayer()
 
   m.login_screen.observeField("next", "onNext")
   m.category_screen.observeField("category_selected", "onCategorySelected")
@@ -24,6 +22,8 @@ function init()
 end function
 
 sub onNext(obj)
+  initializeVideoPlayer()
+  initializeLivePlayer()
   m.login_screen.visible = false
   m.subs_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/user/subscriptions"
