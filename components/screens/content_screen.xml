@@ -32,12 +32,15 @@
           text="" />
         <PosterGrid
           id="content_grid"
-          translation="[100,220]"
+          translation="[40,135]"
+          scale="[0.7,0.7]"
           basePosterSize="[500,280]"
           itemSpacing="[110,110]"
           caption1NumLines="1"
           caption2NumLines="1"
-          numRows="1"
-          numColumns="2" />
+          numRows="2"
+          numColumns="3">
+
+        </PosterGrid>
     </children>
 </component>

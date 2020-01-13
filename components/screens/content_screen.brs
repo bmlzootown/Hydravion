@@ -1,5 +1,7 @@
 sub init()
   m.content_grid = m.top.FindNode("content_grid")
+  m.content_grid.caption1Font.size = 24
+  m.content_grid.caption2NumLines = 0
   m.header = m.top.FindNode("header")
   m.top.observeField("visible", "onVisibleChange")
   m.top.observeField("feed_data", "onFeedChanged")

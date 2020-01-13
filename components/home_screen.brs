@@ -69,7 +69,7 @@ sub initializeVideoPlayer()
   m.videoplayer.EnableCookies()
 	m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
 	m.videoplayer.initClientCertificates()
-  m.videoplayer.SetConnectionTimeout(30)
+  m.videoplayer.SetConnectionTimeout(60)
   m.videoplayer.AddHeader("Accept", "application/json")
   m.videoplayer.AddHeader("Cookie", cookies)
   m.videoplayer.notificationInterval = 1
