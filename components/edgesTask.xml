@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="edgesTask" extends="task" >
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+    <interface>
+      <field id="edges" type="string" />
+      <field id="bestEdge" type="string" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/edgesTask.brs" />
+</component>

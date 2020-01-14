@@ -23,6 +23,10 @@ sub onFeedChanged(obj)
     node.id = ""
     node.streamformat = ""
     postercontent.appendChild(node)
+  else
+    if m.top.streaming then
+      postercontent.appendChild(m.top.stream_node)
+    end if
   end if
   for each video in feed
     node = createObject("roSGNode", "ContentNode")

@@ -6,6 +6,8 @@ function init()
   m.login_screen = m.top.findNode("login_screen")
 
   m.feedpage = 0
+  m.default_edge = "Edge01-na.floatplane.com"
+  m.live = false
 
   m.videoplayer = m.top.findNode("videoplayer")
   m.liveplayer = m.top.findNode("liveplayer")
@@ -24,6 +26,44 @@ function init()
 end function
 
 sub onNext(obj)
+'Get Edge Servers if necessary
+  registry = RegistryUtil()
+  if registry.read("edge", "hydravion") <> invalid then
+    'Edge Server already set, skip!
+    getSubs(obj)
+  else
+    'Edge Server not set, do not skip!
+    m.edge_task = CreateObject("roSGNode", "urlTask")
+    m.edge_task.observeField("response", "onEdges")
+    edges = "https://www.floatplane.com/api/edges"
+    m.edge_task.setField("url", edges)
+    m.edge_task.control = "RUN"
+  end if
+end sub
+
+'Find best edge server
+sub onEdges(obj)
+  m.best_edge = CreateObject("roSGNode", "edgesTask")
+  m.best_edge.observeField("bestEdge", "bestEdge")
+  m.best_edge.setField("edges", obj.getData())
+  m.best_edge.control = "RUN"
+end sub
+
+'Set best edge
+sub bestEdge(obj)
+  registry = RegistryUtil()
+  edge = obj.getData()
+  if edge = "" then
+    registry.write("edge", m.default_edge, "hydravion")
+  else if edge.Instr(m.default_edge) > -1 then
+    registry.write("edge", m.default_edge, "hydravion")
+  else
+    registry.write("edge", edge, "hydravion")
+  end if
+  getSubs(obj)
+end sub
+
+sub getSubs(obj)
   m.login_screen.visible = false
   m.subs_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/user/subscriptions"
@@ -52,10 +92,13 @@ sub onPlayButtonPressed(obj)
 end sub
 
 sub onPlayVideo(obj)
+  registry = RegistryUtil()
+  edge = registry.read("edge", "hydravion")
+  ? edge
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
-  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
+  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
   ? m.selected_media.url
   m.videoplayer.content = m.selected_media
   m.videoplayer.control = "play"
@@ -177,6 +220,8 @@ sub onContentSelected(obj)
       m.feedpage = m.feedpage - 1
       loadFeed(m.feedurl, m.feedpage)
     end if
+  else if m.selected_media.title = "Live"
+    doLive()
   else
     '? "real video selected"
     m.details_screen.content = m.selected_media
@@ -190,7 +235,51 @@ sub onCategorySelected(obj)
   item = list.content.getChild(obj.getData())
   ' Load feed from here for specific sub
   m.content_screen.setField("feed_name", item.title)
-  loadFeed(item.feed_url, 0)
+
+  m.stream_info = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + item.creatorGUID
+  m.stream_info.setField("url", url)
+  m.stream_info.observeField("response", "onGetStreamInfo")
+  m.stream_info.control = "RUN"
+  'loadFeed(item.feed_url, 0)
+  m.feed_url = item.feed_url
+  m.feed_page = 0
+end sub
+
+sub onGetStreamInfo(obj)
+  info = ParseJSON(obj.getData())
+  node = createObject("roSGNode", "ContentNode")
+  node.HDPosterURL = info[0].liveStream.thumbnail.path
+  node.title = info[0].liveStream.title
+  node.ShortDescriptionLine1 = info[0].title
+  node.ShortDescriptionLine2 = "Live"
+  node.guid = info[0].liveStream.streamPath
+  node.id = ""
+  node.streamformat = "hls"
+  m.content_screen.setField("stream_node", node)
+
+  m.stream_check = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/creator/list?search=" + info[0].title
+  m.stream_check.setField("url", url)
+  m.stream_check.observeField("response", "setIfStreaming")
+  m.stream_check.control = "RUN"
+end sub
+
+sub setIfStreaming(obj)
+  info = ParseJSON(obj.getData())
+  ? info[0].title
+  if info[0].liveStream <> invalid  then
+    if info[0].liveStream <> null then
+      m.content_screen.setField("streaming", true)
+    else
+      m.content_screen.setField("streaming", false)
+    end if
+    m.content_screen.setField("streaming", false)
+  else
+    m.content_screen.setField("streaming", false)
+  end if
+
+  loadFeed(m.feed_url, m.feed_page)
 end sub
 
 sub loadFeed(url, page)
@@ -229,6 +318,7 @@ sub onCategoryResponse(obj)
     node = createObject("roSGNode", "category_node")
     node.title = subscription.plan.title
     node.feed_url = "https://www.floatplane.com/api/creator/videos?creatorGUID=" + subscription.creator
+    node.creatorGUID = subscription.creator
     contentNode.appendChild(node)
   end for
   m.category_screen.findNode("category_list").content = contentNode
@@ -247,12 +337,26 @@ sub showOptions()
 end sub
 
 sub showDetailOptions()
+  m.res_task = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.guid
+  m.res_task.setField("url", url)
+  m.res_task.observeField("response", "makeDetailOptions")
+  m.res_task.control = "RUN"
+end sub
+
+sub makeDetailOptions(obj)
+  unparsed = obj.getData()
+  info = ParseJSON(unparsed)
+  m.dbuttons = createObject("roArray", 4, true)
+  for each level in info.levels
+    m.dbuttons.Push(level.name)
+  end for
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   m.top.getScene().dialog.title = "Resolution"
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
   m.top.getScene().dialog.message = "Select Stream Resolution"
-  m.top.getScene().dialog.buttons = ["1080","720", "480", "360"]
+  m.top.getScene().dialog.buttons = m.dbuttons
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.observeField("buttonSelected","handleDetailOptions")
 end sub
@@ -260,15 +364,20 @@ end sub
 sub handleDetailOptions()
   url = ""
   m.video_task = CreateObject("roSGNode", "urlTask")
-  if m.top.getScene().dialog.buttonSelected = 0
-    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=1080"
-  else if m.top.getScene().dialog.buttonSelected = 1
-    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=720"
-  else if m.top.getScene().dialog.buttonSelected = 2
-    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=480"
-  else if m.top.getScene().dialog.buttonSelected = 3
-    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=360"
-  end if
+  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + m.dbuttons[m.top.getScene().dialog.buttonSelected]
+  'if m.top.getScene().dialog.buttonSelected = 0
+  ''  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=360"
+  'else if m.top.getScene().dialog.buttonSelected = 1
+  ''  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=480"
+  'else if m.top.getScene().dialog.buttonSelected = 2
+  ''  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=720"
+  'else if m.top.getScene().dialog.buttonSelected = 3
+  ''  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=1080"
+  'else if m.top.getScene().dialog.buttonSelected = 4
+  ''  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=1440"
+  'else if m.top.getScene().dialog.buttonSelected = 5
+  ''  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=1080"
+  'end if
   m.top.getScene().dialog.close = true
   '? url
   m.video_task.setField("url", url)
@@ -334,22 +443,13 @@ sub doLive()
 end sub
 
 sub doLiveStuff(obj)
+  registry = RegistryUtil()
+  edge = registry.read("edge", "hydravion")
+
   m.top.getScene().dialog.close = true
   json = obj.getData()
   feed = ParseJSON(json)
-  liveUrl = feed[0].livestream.streamPath
-  vidUrl = liveUrl + "/playlist.m3u8"
-
-  m.edge_task = createObject("roSGNode", "edgesTask")
-  m.edge_task.setField("url", "https://www.floatplane.com/api/edges")
-  m.edge_task.setField("liveUrl", vidUrl)
-  m.edge_task.observeField("response", "doMoreLiveStuff")
-  m.edge_task.control = "RUN"
-end sub
-
-sub doMoreLiveStuff(obj)
-  vidUrl = obj.getData()
-  '? vidUrl
+  vidUrl = "https://" + edge + feed[0].livestream.streamPath
 
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = vidURL
@@ -358,7 +458,6 @@ sub doMoreLiveStuff(obj)
   m.content_screen.visible = false
   m.liveplayer.visible = true
   m.liveplayer.setFocus(true)
-  'm.liveplayer.content = vidUrl
   m.liveplayer.content = videoContent
   m.liveplayer.control = "play"
 end sub
