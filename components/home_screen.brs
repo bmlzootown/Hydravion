@@ -248,26 +248,38 @@ end sub
 
 sub onGetStreamInfo(obj)
   info = ParseJSON(obj.getData())
-  node = createObject("roSGNode", "ContentNode")
-  node.HDPosterURL = info[0].liveStream.thumbnail.path
-  node.title = info[0].liveStream.title
-  node.ShortDescriptionLine1 = info[0].title
-  node.ShortDescriptionLine2 = "Live"
-  node.guid = info[0].liveStream.streamPath
-  node.id = ""
-  node.streamformat = "hls"
-  m.content_screen.setField("stream_node", node)
+  if info[0].liveStream <> invalid
+    if info[0].title <> invalid
+      ? "Stream info not null!"
+      ? obj.getData()
+      node = createObject("roSGNode", "ContentNode")
+      node.HDPosterURL = info[0].liveStream.thumbnail.path
+      node.title = info[0].liveStream.title
+      node.ShortDescriptionLine1 = info[0].title
+      node.ShortDescriptionLine2 = "Live"
+      node.guid = info[0].liveStream.streamPath
+      node.id = ""
+      node.streamformat = "hls"
+      m.content_screen.setField("stream_node", node)
 
-  m.stream_check = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/creator/list?search=" + info[0].title
-  m.stream_check.setField("url", url)
-  m.stream_check.observeField("response", "setIfStreaming")
-  m.stream_check.control = "RUN"
+      m.stream_check = CreateObject("roSGNode", "urlTask")
+      url = "https://www.floatplane.com/api/creator/list?search=" + info[0].urlname
+      m.stream_check.setField("url", url)
+      m.stream_check.observeField("response", "setIfStreaming")
+      m.stream_check.control = "RUN"
+    else
+      m.content_screen.setField("streaming", false)
+      loadFeed(m.feed_url, m.feed_page)
+    end if
+  else
+    m.content_screen.setField("streaming", false)
+    loadFeed(m.feed_url, m.feed_page)
+  end if
 end sub
 
 sub setIfStreaming(obj)
   info = ParseJSON(obj.getData())
-  ? info[0].title
+  ? info[0].urlname
   if info[0].liveStream <> invalid  then
     if info[0].liveStream <> null then
       m.content_screen.setField("streaming", true)
@@ -278,7 +290,6 @@ sub setIfStreaming(obj)
   else
     m.content_screen.setField("streaming", false)
   end if
-
   loadFeed(m.feed_url, m.feed_page)
 end sub
 
