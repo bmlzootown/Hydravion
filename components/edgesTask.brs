@@ -1,6 +1,6 @@
 sub init()
   m.top.functionname = "request"
-  m.top.response = ""
+  m.top.bestEdge = ""
   m.etime = 9999
   m.edge = ""
 end sub

@@ -11,8 +11,6 @@ function init()
 
   m.videoplayer = m.top.findNode("videoplayer")
   m.liveplayer = m.top.findNode("liveplayer")
-  initializeVideoPlayer()
-  initializeLivePlayer()
 
   m.login_screen.observeField("next", "onNext")
   m.category_screen.observeField("category_selected", "onCategorySelected")
@@ -26,6 +24,8 @@ function init()
 end function
 
 sub onNext(obj)
+  initializeVideoPlayer()
+  initializeLivePlayer()
 'Get Edge Servers if necessary
   registry = RegistryUtil()
   if registry.read("edge", "hydravion") <> invalid then

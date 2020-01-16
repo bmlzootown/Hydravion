@@ -34,7 +34,7 @@
           text="" />
         <PosterGrid
           id="content_grid"
-          translation="[40,135]"
+          translation="[40,145]"
           scale="[0.7,0.7]"
           basePosterSize="[500,280]"
           itemSpacing="[110,110]"
