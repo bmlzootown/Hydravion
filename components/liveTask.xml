@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="liveTask" extends="task" >
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+    <interface>
+      <field id="url" type="string" />
+      <field id="done" type="bool" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/liveTask.brs" />
+</component>
