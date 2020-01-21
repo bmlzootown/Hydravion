@@ -202,11 +202,36 @@ sub onContentSelected(obj)
       loadFeed(m.feedurl, m.feedpage)
     end if
   else
-    'User selected video, let's play
-    m.details_screen.content = m.selected_media
-    m.content_screen.visible = false
-    m.details_screen.visible = true
+    'User selected video, let's prebuffer while on detail screen
+    'Grab highest resolution supported by TV for now (nobody has 8k yet, right?)
+    'We have a check in onPlayerStateChanged so that, if the video doesn't exist for the given resolution, we'll check the next best TV-supported resolution (rinse, lather, repeat)
+    supported = m.device.GetSupportedGraphicsResolutions()
+    height = strI(supported[supported.Count() - 1].height)
+    m.video_task = CreateObject("roSGNode", "urlTask")
+    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
+    m.video_task.setField("url", url)
+    m.video_task.observeField("response", "onPreBuffer")
+    m.video_task.control = "RUN"
   end if
+end sub
+
+sub onPreBuffer(obj)
+  'Setup videoplayer for prebuffering while user is on detail screen
+  registry = RegistryUtil()
+  edge = registry.read("edge", "hydravion")
+  m.details_screen.visible = false
+  m.videoplayer.visible = true
+  m.videoplayer.setFocus(true)
+  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
+  ? m.selected_media.url
+  m.videoplayer.content = m.selected_media
+  m.videoplayer.visible = false
+  m.videoplayer.setFocus(false)
+  m.videoplayer.control = "prebuffer"
+  m.details_screen.content = m.selected_media
+  m.content_screen.visible = false
+  m.details_screen.visible = true
+  m.details_screen.setFocus(true)
 end sub
 
 sub onPlayButtonPressed(obj)
@@ -215,15 +240,12 @@ sub onPlayButtonPressed(obj)
     ' Shouldn't need to handle different resolutions as the given m3u8 has that all added in already
     doLive()
   else
-    'Just grab highest resolution supported by TV for now (nobody has 8k yet, right?)
-    'We have a check in onPlayerStateChanged so that, if the video doesn't exist for the given resolution, we'll check the next best TV-supported resolution (rinse, lather, repeat)
-    supported = m.device.GetSupportedGraphicsResolutions()
-    height = strI(supported[supported.Count() - 1].height)
-    m.video_task = CreateObject("roSGNode", "urlTask")
-    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
-    m.video_task.setField("url", url)
-    m.video_task.observeField("response", "onPlayVideo")
-    m.video_task.control = "RUN"
+    'Video is already prebuffered, we just need to hide the detail screen, focus on the video player, and play the video
+    m.details_screen.visible = false
+    m.details_screen.setFocus(false)
+    m.videoplayer.visible = true
+    m.videoplayer.setFocus(true)
+    m.videoplayer.control = "play"
   end if
 end sub
 
