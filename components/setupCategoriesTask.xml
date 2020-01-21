@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="setupCategoriesTask" extends="task" >
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+    <interface>
+      <field id="unparsed" type="string" />
+      <field id="category_node" type="node" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/setupCategoriesTask.brs" />
+</component>

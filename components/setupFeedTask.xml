@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="setupFeedTask" extends="task" >
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+    <interface>
+      <field id="unparsed_feed" type="string" />
+      <field id="feed" type="node" />
+      <field id="page" type="integer" />
+      <field id="streaming" type="bool" />
+      <field id="stream_node" type="node" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/setupFeedTask.brs" />
+</component>

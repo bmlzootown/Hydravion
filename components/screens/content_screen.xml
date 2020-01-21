@@ -7,6 +7,7 @@
       <field id="feed_data"
         type="String"
         />
+      <field id="feed_node" type="node" />
       <field id="feed_name"
         type="String"
         />

@@ -85,39 +85,16 @@ sub onSubs(obj)
 end sub
 
 sub onCategoryResponse(obj)
-  response = obj.getData()
-  json = ParseJSON(response)
-
-  'Redundant subscriptions can occur, so let's get rid of them
-  trimmed = createObject("roArray",json.Count(),true)
-  for each subscription in json
-    if contains(trimmed, subscription.creator) = false
-      trimmed.Push(subscription)
-    end if
-  end for
-
-  'Now let's display the subscriptions so the user can select one
-  contentNode = createObject("roSGNode", "ContentNode")
-  for each subscription in trimmed
-    node = createObject("roSGNode", "category_node")
-    node.title = subscription.plan.title
-    node.feed_url = "https://www.floatplane.com/api/creator/videos?creatorGUID=" + subscription.creator
-    node.creatorGUID = subscription.creator
-    contentNode.appendChild(node)
-  end for
-  m.category_screen.findNode("category_list").content = contentNode
-  m.category_screen.setFocus(true)
+  m.feed_task = createObject("roSGNode", "setupCategoriesTask")
+  m.feed_task.setField("unparsed", obj.getData())
+  m.feed_task.observeField("category_node", "onCateogrySetup")
+  m.feed_task.control = "RUN"
 end sub
 
-function contains(trimmed,id) as Boolean
-  for each subscription in trimmed
-    if subscription.creator = id
-      return true
-    end if
-    return false
-  end for
-  return false
-end function
+sub onCateogrySetup(obj)
+  m.category_screen.findNode("category_list").content = obj.getData()
+  m.category_screen.setFocus(true)
+end sub
 
 sub onCategorySelected(obj)
   'Load feed for specific subscription
@@ -181,9 +158,21 @@ sub loadFeed(url, page)
 end sub
 
 sub onFeedResponse(obj)
+  'We will setup the feed node in the setupFeedTask, allowing us to manually cache thumbnail images
   unparsed_json = obj.getData()
+  m.setupFeed_task = createObject("roSGNode", "setupFeedTask")
+  m.setupFeed_task.setField("unparsed_feed", unparsed_json)
+  m.setupFeed_task.setField("streaming", false)
+  m.setupFeed_task.setField("stream_node", m.content_screen.getField("stream_node"))
+  m.setupFeed_task.setField("page", m.feedpage)
+  m.setupFeed_task.observeField("feed", "onFeedSetup")
+  m.setupFeed_task.control = "RUN"
+end sub
+
+sub onFeedSetup(obj)
+  'Feed node has been setup, show it to user
   m.content_screen.setField("page", m.feedpage)
-  m.content_screen.setField("feed_data", unparsed_json)
+  m.content_screen.setField("feed_node", obj.getData())
   m.category_screen.visible = false
   m.content_screen.visible = true
 end sub

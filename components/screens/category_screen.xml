@@ -11,6 +11,13 @@
       height="30"
       translation="[1230,20]"
 			opacity="1" />
+    <Poster
+      id="icon"
+      width="1280"
+      height="720"
+      loadDisplayMode="scaleToZoom"
+      translation="[0,0]"
+      opacity="0.1" />
     <Label
       id="env"
       text="Subscriptions:"
