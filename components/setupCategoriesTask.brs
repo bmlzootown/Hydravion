@@ -40,6 +40,7 @@ function getImageUrl(creator) as String
   xfer.initClientCertificates()
   xfer.SetUrl("https://www.floatplane.com/api/creator/info?creatorGUID=" + creator)
   subInfo = ParseJSON(xfer.GetToString())
+
   if subInfo[0].cover.childImages[0].path <> invalid
     return subInfo[0].cover.childImages[0].path
   end if

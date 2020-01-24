@@ -8,6 +8,7 @@ function init()
   m.feedpage = 0
   m.default_edge = "Edge01-na.floatplane.com"
   m.live = false
+  m.playButtonPressed = false
 
   m.videoplayer = m.top.findNode("videoplayer")
   m.liveplayer = m.top.findNode("liveplayer")
@@ -102,14 +103,36 @@ sub onCategorySelected(obj)
   item = list.content.getChild(obj.getData())
   m.content_screen.setField("feed_name", item.title)
   'Grab stream info
-  m.stream_info = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + item.creatorGUID
-  m.stream_info.setField("url", url)
-  m.stream_info.observeField("response", "onGetStreamInfo")
-  m.stream_info.control = "RUN"
+  m.stream_cdn = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/cdn/delivery?type=live&creator=" + item.creatorGUID
+  m.stream_cdn.setField("url", url)
+  m.stream_cdn.observeField("response", "onGetStreamURL")
+  m.stream_cdn.control = "RUN"
+  m.creatorGUID = item.creatorGUID
 
   m.feed_url = item.feed_url
   m.feed_page = 0
+end sub
+
+sub onGetStreamURL(obj)
+  json = ParseJSON(obj.getData())
+  cdn = json.cdn
+  uri = json.resource.uri
+  if json.resource.data <> invalid
+    regexObj = CreateObject("roRegex", "\{(.*?)\}", "i")
+    regUri = regexObj.matchAll(uri)
+    for i = 0 to regUri.Count() - 1
+      data = json.resource.data[regUri[i][1]]
+      uri = strReplace(uri, regUri[i][0], data)
+    end for
+  end if
+  m.streamUri = cdn + uri
+
+  m.stream_info = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + m.creatorGUID
+  m.stream_info.setField("url", url)
+  m.stream_info.observeField("response", "onGetStreamInfo")
+  m.stream_info.control = "RUN"
 end sub
 
 sub onGetStreamInfo(obj)
@@ -121,11 +144,12 @@ sub onGetStreamInfo(obj)
       node.HDPosterURL = info[0].liveStream.thumbnail.path
       node.title = info[0].liveStream.title
       node.ShortDescriptionLine1 = info[0].liveStream.title
-      node.ShortDescriptionLine2 = "Live"
-      node.guid = info[0].liveStream.streamPath
-      node.id = ""
+      node.Description = info[0].liveStream.description
+      node.guid = m.streamUri
+      node.id = "live"
       node.streamformat = "hls"
-      m.content_screen.setField("stream_node", node)
+      m.stream_node = node
+      'm.content_screen.setField("stream_node", node)
 
       '#TODO -- check to see if streaming, waiting for API to implement this
       ''m.stream_check = CreateObject("roSGNode", "urlTask")
@@ -163,7 +187,7 @@ sub onFeedResponse(obj)
   m.setupFeed_task = createObject("roSGNode", "setupFeedTask")
   m.setupFeed_task.setField("unparsed_feed", unparsed_json)
   m.setupFeed_task.setField("streaming", false)
-  m.setupFeed_task.setField("stream_node", m.content_screen.getField("stream_node"))
+  m.setupFeed_task.setField("stream_node", m.stream_node)
   m.setupFeed_task.setField("page", m.feedpage)
   m.setupFeed_task.observeField("feed", "onFeedSetup")
   m.setupFeed_task.control = "RUN"
@@ -190,17 +214,33 @@ sub onContentSelected(obj)
       m.feedpage = m.feedpage - 1
       loadFeed(m.feedurl, m.feedpage)
     end if
+  else if m.selected_media.id = "live"
+    m.live = true
+    m.details_screen.content = m.selected_media
+    m.content_screen.visible = false
+    m.details_screen.visible = true
+    m.details_screen.setFocus(true)
   else
+    m.live = false
     'User selected video, let's prebuffer while on detail screen
     'Grab highest resolution supported by TV for now (nobody has 8k yet, right?)
     'We have a check in onPlayerStateChanged so that, if the video doesn't exist for the given resolution, we'll check the next best TV-supported resolution (rinse, lather, repeat)
+
+    'AAAAAAAHHHHHHHH
+    ? m.selected_media
+
     supported = m.device.GetSupportedGraphicsResolutions()
     height = strI(supported[supported.Count() - 1].height)
     m.video_task = CreateObject("roSGNode", "urlTask")
     url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
     m.video_task.setField("url", url)
-    m.video_task.observeField("response", "onPreBuffer")
-    m.video_task.control = "RUN"
+    if m.playButtonPressed
+      m.video_task.observeField("response", "onPlayVideo")
+      m.video_task.control = "RUN"
+    else
+      m.video_task.observeField("response", "onPreBuffer")
+      m.video_task.control = "RUN"
+    end if
   end if
 end sub
 
@@ -235,52 +275,26 @@ sub onPlayButtonPressed(obj)
     m.videoplayer.visible = true
     m.videoplayer.setFocus(true)
     m.videoplayer.control = "play"
+    if m.video_task <> invalid
+      m.playButtonPressed = true
+    end if
   end if
 end sub
 
 sub doLive()
-  'json = m.content_screen.getField("feed_data")
-  'feed = ParseJSON(json)
-  'chanid = feed[0].creator
-  'url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + chanid + ""
-  'm.chan_task = createObject("roSGNode", "urlTask")
-  'm.chan_task.setField("url", url)
-  'm.chan_task.observeField("response", "doLiveStuff")
-  'm.chan_task.control = "RUN"
-
   'Grab stream info from earlier
-  streamInfo = m.content_screen.getField("stream_node")
+  streamInfo = m.stream_node
   if m.top.getScene().dialog <> invalid
     'If we tried to play the stream from the options dialog, close said dialog
     m.top.getScene().dialog.close = true
   end if
-  url = ""
-  if streamInfo.guid.Instr("live_abr") > -1
-    registry = RegistryUtil()
-    url = "https://cdn1.floatplane.com" + streamInfo.guid + "/playlist.m3u8"
-  else if streamInfo.guid.Instr("/api/lvs/hls/lvs") > -1
-    url = "https://usher.ttvnw.net" + streamInfo.guid
-  end if
-  ? url
+  url = streamInfo.guid
+  ? streamInfo
   m.live_task = createObject("roSGNode", "liveTask")
   m.live_task.setField("url", url)
   m.live_task.observeField("done", "loadLiveStuff")
   m.live_task.control = "RUN"
 end sub
-
-'sub doLiveStuff(obj)
-  'if m.top.getScene().dialog <> invalid
-  ''  m.top.getScene().dialog.close = true
-  'end if
-
-  'json = obj.getData()
-  'feed = ParseJSON(json)
-  'url = "https://usher.ttvnw.net" + feed[0].livestream.streamPath
-  'm.live_task = createObject("roSGNode", "liveTask")
-  'm.live_task.setField("url", url)
-  'm.live_task.observeField("done", "loadLiveStuff")
-  'm.live_task.control = "RUN"
-'end sub
 
 sub loadLiveStuff(obj)
   'It doesn't like loading straight from the url, so we wrote the m3u8 to a file
@@ -361,9 +375,9 @@ sub onPlayerStateChanged(obj)
     '-4 Empty list; no streams specified to play
     '-5 Media error; the media format is unknown or unsupported
     '-6 DRM error
-    ? m.videoplayer.errorCode
-    ? m.videoplayer.errorMsg
-    if m.videoplayer.errorCode = -3
+    error = "[Error " + m.videoplayer.errorCode.ToStr() + "] " + m.videoplayer.errorMsg
+    ? error
+    if m.videoplayer.errorCode = -3 or m.videoplayer.errorCode = -2 or m.videoplayer.errorCode = -1
       m.videoindex = m.videoindex + 1
       supported = m.device.GetSupportedGraphicsResolutions()
       if supported.Count() > m.videoindex
@@ -372,8 +386,13 @@ sub onPlayerStateChanged(obj)
         url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
         '? url
         m.video_task.setField("url", url)
-        m.video_task.observeField("response", "onPlayVideo")
-        m.video_task.control = "RUN"
+        if m.playButtonPressed
+          m.video_task.observeField("response", "onPlayVideo")
+          m.video_task.control = "RUN"
+        else
+          m.video_task.observeField("response", "onPreBuffer")
+          m.video_task.control = "RUN"
+        end if
       else
         showVideoError()
       end if
@@ -387,6 +406,7 @@ sub onLivePlayerStateChanged(obj)
   if state = "error"
     ? m.liveplayer.errorCode
     ? m.liveplayer.errorMsg
+    m.content_screen.visible = false
     showLiveError()
   else if state = "finished"
     closeStream()
@@ -417,12 +437,17 @@ sub closeVideo()
   m.videoplayer.control = "stop"
   m.videoplayer.visible = false
   m.details_screen.visible = true
+  m.details_screen.setFocus(true)
+  m.videoindex = 0
+  m.playButtonPressed = false
 end sub
 
 sub closeStream()
   m.liveplayer.control = "stop"
   m.liveplayer.visible = false
+  m.details_screen.visible = false
   m.content_screen.visible = true
+  m.content_screen.setFocus(true)
 end sub
 
 sub setIfStreaming(obj)
@@ -431,18 +456,14 @@ sub setIfStreaming(obj)
   if info[0].liveStream <> invalid  then
     if info[0].liveStream <> null then
       m.content_screen.setField("streaming", true)
-      m.live = true
     else
       m.content_screen.setField("streaming", false)
-      m.live = false
       'false'
     end if
     m.content_screen.setField("streaming", false)
-    m.live = false
     'false'
   else
     m.content_screen.setField("streaming", false)
-    m.live = false
     'false'
   end if
   loadFeed(m.feed_url, m.feed_page)
@@ -542,22 +563,47 @@ sub doLogout()
   m.login_screen.findNode("password").text = "password"
 end sub
 
+function strReplace(basestr As String, oldsub As String, newsub As String) As String
+    newstr = ""
+    i = 1
+    while i <= Len(basestr)
+        x = Instr(i, basestr, oldsub)
+        if x = 0 then
+            newstr = newstr + Mid(basestr, i)
+            exit while
+        endif
+        if x > i then
+            newstr = newstr + Mid(basestr, i, x-i)
+            i = x
+        endif
+        newstr = newstr + newsub
+        i = i + Len(oldsub)
+    end while
+    return newstr
+end function
+
 function onKeyEvent(key, press) as Boolean
   if key = "back" and press
     if m.details_screen.visible
       m.details_screen.visible = false
       m.content_screen.visible = true
       m.content_screen.setFocus(true)
+      m.videoindex = 0
+      m.playButtonPressed = false
       return true
     else if m.videoplayer.visible
       m.videoplayer.control = "stop"
       m.videoplayer.visible = false
+      m.content_screen.visible = false
       m.details_screen.visible = true
       m.details_screen.setFocus(true)
+      m.videoindex = 0
+      m.playButtonPressed = false
       return true
     else if m.liveplayer.visible
       m.liveplayer.control = "stop"
       m.liveplayer.visible = false
+      m.details_screen.visible = false
       m.content_screen.visible = true
       m.content_screen.setFocus(true)
       return true

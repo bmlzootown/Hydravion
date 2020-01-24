@@ -3,7 +3,6 @@
     <script type="text/brightscript" uri="pkg:/components/screens/content_screen.brs" />
     <interface>
       <field id="streaming" type="bool" />
-      <field id="stream_node" type="node" />
       <field id="feed_data"
         type="String"
         />
