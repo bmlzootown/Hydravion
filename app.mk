@@ -486,6 +486,10 @@ pkg: install
 		http://$(ROKU_DEV_TARGET)/pkgs/$$PKG_LINK`; \
 	$(CHECK_DEVICE_HTTP_STATUS)
 
+	@if [ -d ~/Desktop ]; then \
+		cp $(APP_PKG_FILE) ~/Desktop/; \
+	fi
+
 	@echo "*** Package $(APPNAME) complete ***"
 
 # -------------------------------------------------------------------------

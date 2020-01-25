@@ -1,7 +1,7 @@
 title=Hydravion
 major_version=1
 minor_version=5
-build_version=6
+build_version=7
 
 mm_icon_focus_hd=pkg:/images/channel-poster.png
 splash_screen_fhd=pkg:/images/splash-screen.jpg

@@ -18,6 +18,9 @@ function init()
   m.content_screen.observeField("content_selected", "onContentSelected")
   m.details_screen.observeField("play_button_pressed", "onPlayButtonPressed")
 
+  m.supported = m.device.GetSupportedGraphicsResolutions()
+  m.arrutil = ArrayUtil()
+
   registry = RegistryUtil()
   if registry.read("cfduid", "hydravion") <> invalid AND registry.read("sails", "hydravion") <> invalid then
     'Check whether cookies are set, if not we login. If found, we head over to onNext()
@@ -222,25 +225,49 @@ sub onContentSelected(obj)
     m.details_screen.setFocus(true)
   else
     m.live = false
-    'User selected video, let's prebuffer while on detail screen
-    'Grab highest resolution supported by TV for now (nobody has 8k yet, right?)
-    'We have a check in onPlayerStateChanged so that, if the video doesn't exist for the given resolution, we'll check the next best TV-supported resolution (rinse, lather, repeat)
+    m.selected_task = CreateObject("roSGNode", "urlTask")
+    url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.guid
+    m.selected_task.setField("url", url)
+    m.selected_task.observeField("response", "onSelectedSetup")
+    m.selected_task.control = "RUN"
+  end if
+end sub
 
-    'AAAAAAAHHHHHHHH
-    ? m.selected_media
-
-    supported = m.device.GetSupportedGraphicsResolutions()
-    height = strI(supported[supported.Count() - 1].height)
-    m.video_task = CreateObject("roSGNode", "urlTask")
-    url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
-    m.video_task.setField("url", url)
-    if m.playButtonPressed
-      m.video_task.observeField("response", "onPlayVideo")
-      m.video_task.control = "RUN"
-    else
-      m.video_task.observeField("response", "onPreBuffer")
-      m.video_task.control = "RUN"
+sub onSelectedSetup(obj)
+  'Got available resolutions for selected video
+  unparsed = obj.getData()
+  info = ParseJSON(unparsed)
+  resolutions = createObject("roArray", 10, true)
+  'Push parsed resolutions to array for easy access
+  for each level in info.levels
+    resolutions.Push(level.name)
+  end for
+  'Loop through supported resolutions, finding highest available that also exists for video
+  height = ""
+  for i = m.supported.Count() - 1 to 0 step -1
+    tv = (strI(m.supported[i].height)).trim()
+    if m.arrutil.contains(resolutions, tv)
+      height = tv
+      exit for
     end if
+  end for
+  if height = ""
+    height = "720"
+  end if
+
+  'Show selected media node for debug
+  ? m.selected_media
+
+  m.video_task = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
+  m.video_task.setField("url", url)
+  if m.playButtonPressed
+    m.video_task.observeField("response", "onPlayVideo")
+    m.video_task.control = "RUN"
+  else
+    'User selected video, let's prebuffer while on detail screen
+    m.video_task.observeField("response", "onPreBuffer")
+    m.video_task.control = "RUN"
   end if
 end sub
 
@@ -337,7 +364,6 @@ sub initializeVideoPlayer()
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
   m.videoplayer.observeField("state", "onPlayerStateChanged")
-  m.videoindex = 0
 end sub
 
 sub initializeLivePlayer()
@@ -378,24 +404,7 @@ sub onPlayerStateChanged(obj)
     error = "[Error " + m.videoplayer.errorCode.ToStr() + "] " + m.videoplayer.errorMsg
     ? error
     if m.videoplayer.errorCode = -3 or m.videoplayer.errorCode = -2 or m.videoplayer.errorCode = -1
-      m.videoindex = m.videoindex + 1
-      supported = m.device.GetSupportedGraphicsResolutions()
-      if supported.Count() > m.videoindex
-        height = strI(supported[supported.Count() - 1 - m.videoindex].height)
-        m.video_task = CreateObject("roSGNode", "urlTask")
-        url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
-        '? url
-        m.video_task.setField("url", url)
-        if m.playButtonPressed
-          m.video_task.observeField("response", "onPlayVideo")
-          m.video_task.control = "RUN"
-        else
-          m.video_task.observeField("response", "onPreBuffer")
-          m.video_task.control = "RUN"
-        end if
-      else
-        showVideoError()
-      end if
+      showVideoError()
     end if
   end if
 end sub
@@ -438,7 +447,6 @@ sub closeVideo()
   m.videoplayer.visible = false
   m.details_screen.visible = true
   m.details_screen.setFocus(true)
-  m.videoindex = 0
   m.playButtonPressed = false
 end sub
 
@@ -494,7 +502,7 @@ sub makeDetailOptions(obj)
   'Display available resolutions for selected video
   unparsed = obj.getData()
   info = ParseJSON(unparsed)
-  m.dbuttons = createObject("roArray", 4, true)
+  m.dbuttons = createObject("roArray", 10, true)
   for each level in info.levels
     m.dbuttons.Push(level.name)
   end for
@@ -582,13 +590,34 @@ function strReplace(basestr As String, oldsub As String, newsub As String) As St
     return newstr
 end function
 
+function ArrayUtil() as Object
+  'Borrowed function(s) from https://github.com/juliomalves/roku-libs because I was too lazy to write my own
+  util = {
+    contains: function(arr as Object, element as Dynamic) as Boolean
+      return m.indexOf(arr, element) >= 0
+    end function
+    indexOf: function(arr as Object, element as Dynamic) as Integer
+      if not m.isArray(arr) then return -1
+      size = arr.count()
+      if size = 0 then return -1
+        for i = 0 to size - 1
+          if arr[i] = element then return i
+        end for
+      return -1
+    end function
+    isArray: function(arr) as Boolean
+      return type(arr) = "roArray"
+    end function
+  }
+  return util
+end function
+
 function onKeyEvent(key, press) as Boolean
   if key = "back" and press
     if m.details_screen.visible
       m.details_screen.visible = false
       m.content_screen.visible = true
       m.content_screen.setFocus(true)
-      m.videoindex = 0
       m.playButtonPressed = false
       return true
     else if m.videoplayer.visible
@@ -597,7 +626,6 @@ function onKeyEvent(key, press) as Boolean
       m.content_screen.visible = false
       m.details_screen.visible = true
       m.details_screen.setFocus(true)
-      m.videoindex = 0
       m.playButtonPressed = false
       return true
     else if m.liveplayer.visible
