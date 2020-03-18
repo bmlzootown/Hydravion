@@ -8,9 +8,14 @@ function request()
   'Redundant subscriptions can occur, so let's get rid of them
   trimmed = createObject("roArray",json.Count(),true)
   for each subscription in json
-    if contains(trimmed, subscription.creator) = false
+    ? "JSON: " + subscription.creator
+    if contains(trimmed, subscription) = false
       trimmed.Push(subscription)
+      ? "Adding to Trimmed: " + subscription.creator
     end if
+    for each trim in trimmed
+      ? "Trimmed: " + trim.creator
+    end for
   end for
 
   'Now let's display the subscriptions so the user can select one
@@ -77,12 +82,13 @@ function loadCacheImage(url) as String
   return filename
 end function
 
-function contains(trimmed,id) as Boolean
-  for each subscription in trimmed
-    if subscription.creator = id
+function contains(trimmed,subscription) as Boolean
+  for each subs in trimmed
+    if subs.creator = subscription.creator
+      ? "FOUND"
       return true
     end if
-    return false
   end for
+  ? "NOT FOUND"
   return false
 end function

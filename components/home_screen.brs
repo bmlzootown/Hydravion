@@ -11,7 +11,6 @@ function init()
   m.playButtonPressed = false
 
   m.videoplayer = m.top.findNode("videoplayer")
-  m.liveplayer = m.top.findNode("liveplayer")
 
   m.login_screen.observeField("next", "onNext")
   m.category_screen.observeField("category_selected", "onCategorySelected")
@@ -31,7 +30,6 @@ end function
 sub onNext(obj)
   'Now that we have cookies, we can initialize the video/live player
   initializeVideoPlayer()
-  initializeLivePlayer()
   'Get Edge Servers if necessary
   registry = RegistryUtil()
   if registry.read("edge", "hydravion") <> invalid then
@@ -273,12 +271,13 @@ end sub
 
 sub onPreBuffer(obj)
   'Setup videoplayer for prebuffering while user is on detail screen
-  registry = RegistryUtil()
-  edge = registry.read("edge", "hydravion")
+  'registry = RegistryUtil()
+  'edge = registry.read("edge", "hydravion")
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
-  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
+  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
+  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
   ? m.selected_media.url
   m.videoplayer.content = m.selected_media
   m.videoplayer.visible = false
@@ -317,23 +316,29 @@ sub doLive()
   end if
   url = streamInfo.guid
   ? streamInfo
-  m.live_task = createObject("roSGNode", "liveTask")
-  m.live_task.setField("url", url)
-  m.live_task.observeField("done", "loadLiveStuff")
-  m.live_task.control = "RUN"
+  'm.live_task = createObject("roSGNode", "liveTask")
+  'm.live_task.setField("url", url)
+  'm.live_task.observeField("done", "loadLiveStuff")
+  'm.live_task.control = "RUN"
+  loadLiveStuff(url)
 end sub
 
 sub loadLiveStuff(obj)
   'It doesn't like loading straight from the url, so we wrote the m3u8 to a file
   videoContent = createObject("roSGNode", "ContentNode")
-  videoContent.url = "tmp:/live.m3u8"
-  videoContent.streamformat = "big-hls"
+  'videoContent.url = "tmp:/live.m3u8"
+  'videoContent.url = obj.DecodeUri()
+  videoContent.url = "https://video-weaver.atl01.hls.ttvnw.net/v1/playlist/CoIFW1ZVhMI2-A6TBpi8zz9_y3ubEwNYWRLurLWTEfiKGCXQYDUQn-fTnYdvdt5kqvycJ_eivF-oDyZge00GigExTjGWugKiLT21Te_EWTRVAFTGXx4NEue1f27jFSXeAWKU2I7n0g4RBQkJ2tYTC4VVhz_pHEVq2pOLeGd2ktTP4dw2YDOQ0RfM7utuvd1md4-Wiwt4vN-5eYECgTtW2IcJNhvpgrwl5dRozc0gzJk_2bj8sA7aKrRErI1XJ80_UjDF_ErHwpsDM4lzihk96MwEJLK96E6ALIOD2HYYmuHeadh_DBvtqadrbuJ91bHjwL6W7BjUN0BZUAkZKfq5Piv0jL9LiXnTxCSGv9apA2xKXH3Spwu-gP8fXAh7CeC1adxwX1o82ScC-cqBUd736pj-huj_eP02YcFxNJnt2nCOBNbsEDHZxI2zb038kAZgcWw_0jMyc4LzrvKzWCvZeKYaTSXkEvUF6qr7wZ59GeniV6usM_Qb2y0sffhB2bc_zVAzIRHXv5tF2WMOn2WmOGepPEl6tbBfYNI971x9CvzPhLGv-jMpXA_o3xSELkH8UO28vCIsJaJ7lEPiam-HzQ2M-r4R-HZfAD3hNgWYCKpbxEsoN4x1vsmizRIp9sOHhJp5qKncVrQwAPUGc1Mx2G9LCjYojnJpVoXdYTsfrOnMcPP5MGkFgiHDeA9U46i_B20Y4luIv05SAKWZuySMehcV_KdcXbnBcckF8tSD_wsG2-hfxGelmPIMnIRbj-rr_XCVKhXxFwPJASqQRpfBTQr3ioGiXd963J7swR1_cef5R4sVutrm7VD8BkWoKWd0hFi6jumy9KlkoTvMoY7oSpAHKa_BEhArhUxp7I0cXXEH1UaxWfpuGgzcZTpPFWfXE0VxIl8.m3u8"
+  videoContent.StreamFormat = "hls"
+  videoContent.PlayStart = 999999999
+  videoContent.live = true
 
   m.content_screen.visible = false
-  m.liveplayer.visible = true
-  m.liveplayer.setFocus(true)
-  m.liveplayer.content = videoContent
-  m.liveplayer.control = "play"
+  m.videoplayer.visible = true
+  m.videoplayer.setFocus(true)
+  m.videoplayer.content = videoContent
+  m.videoplayer.control = "play"
+
 end sub
 
 sub onPlayVideo(obj)
@@ -366,25 +371,8 @@ sub initializeVideoPlayer()
   m.videoplayer.observeField("state", "onPlayerStateChanged")
 end sub
 
-sub initializeLivePlayer()
-  'Setup live player with proper cookies
-  registry = RegistryUtil()
-  cfduid = registry.read("cfduid", "hydravion")
-  sails = registry.read("sails", "hydravion")
-  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
-  m.liveplayer.EnableCookies()
-  m.liveplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
-  m.liveplayer.initClientCertificates()
-  m.liveplayer.SetConnectionTimeout(60)
-  m.liveplayer.AddHeader("Accept", "application/json")
-  m.liveplayer.AddHeader("Cookie", cookies)
-  m.liveplayer.notificationInterval = 1
-  m.liveplayer.observeField("position", "onPlayerPositionChanged")
-  m.liveplayer.observeField("state", "onLivePlayerStateChanged")
-end sub
-
 sub onPlayerPositionChanged(obj)
-  '? "Position: ", obj.getData()
+  ? "Position: ", obj.getData()
 end sub
 
 sub onPlayerStateChanged(obj)
@@ -409,21 +397,6 @@ sub onPlayerStateChanged(obj)
   end if
 end sub
 
-sub onLivePlayerStateChanged(obj)
-  '? "State: ", obj.getData()
-  state = obj.getData()
-  if state = "error"
-    ? m.liveplayer.errorCode
-    ? m.liveplayer.errorMsg
-    m.content_screen.visible = false
-    showLiveError()
-  else if state = "finished"
-    closeStream()
-  else if state = "playing"
-    ? "Stream is playing, huzzah!"
-  end if
-end sub
-
 sub showVideoError()
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   m.top.getScene().dialog.title = "Error"
@@ -433,29 +406,14 @@ sub showVideoError()
   m.top.getScene().dialog.optionsDialog = true
 end sub
 
-sub showLiveError()
-  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  m.top.getScene().dialog.title = "Error"
-  m.top.getScene().dialog.optionsDialog = true
-  m.top.getScene().dialog.iconUri = ""
-  m.top.getScene().dialog.message = "Live stream not found!"
-  m.top.getScene().dialog.optionsDialog = true
-end sub
-
 sub closeVideo()
   m.videoplayer.control = "stop"
   m.videoplayer.visible = false
-  m.details_screen.visible = true
-  m.details_screen.setFocus(true)
-  m.playButtonPressed = false
-end sub
-
-sub closeStream()
-  m.liveplayer.control = "stop"
-  m.liveplayer.visible = false
-  m.details_screen.visible = false
+  'm.details_screen.visible = true
+  'm.details_screen.setFocus(true)
   m.content_screen.visible = true
   m.content_screen.setFocus(true)
+  m.playButtonPressed = false
 end sub
 
 sub setIfStreaming(obj)
@@ -623,17 +581,13 @@ function onKeyEvent(key, press) as Boolean
     else if m.videoplayer.visible
       m.videoplayer.control = "stop"
       m.videoplayer.visible = false
-      m.content_screen.visible = false
-      m.details_screen.visible = true
-      m.details_screen.setFocus(true)
-      m.playButtonPressed = false
-      return true
-    else if m.liveplayer.visible
-      m.liveplayer.control = "stop"
-      m.liveplayer.visible = false
-      m.details_screen.visible = false
+      'm.content_screen.visible = false
+      'm.details_screen.visible = true
+      'm.details_screen.setFocus(true)
       m.content_screen.visible = true
+      m.details_screen.visible = false
       m.content_screen.setFocus(true)
+      m.playButtonPressed = false
       return true
     else if m.content_screen.visible
       m.content_screen.visible = false
