@@ -30,7 +30,7 @@ function request()
     node.guid = video.guid
     node.id = video.releaseDate
     node.streamformat = "hls"
-
+    
     'Check to see if thumbnail is cached
     node.HDPosterURL = loadCacheImage(video.thumbnail.childImages[0].path)
 

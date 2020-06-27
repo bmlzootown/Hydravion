@@ -13,29 +13,36 @@ function request()
   cfduid = registry.read("cfduid", "hydravion")
   sails = registry.read("sails", "hydravion")
   cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
-  m.https = CreateObject("roUrlTransfer")
-  m.https.RetainBodyOnError(true)
-  m.https.setCertificatesFile("common:/certs/ca-bundle.crt")
-  m.https.initClientCertificates()
-  m.https.AddHeader("Cookie", cookies)
-  port = CreateObject("roMessagePort")
-  m.https.SetMessagePort(port)
 
   for each edge in edges.edges
-    url = "https://" + edge.hostname
+    m.https = CreateObject("roUrlTransfer")
+    'm.https.RetainBodyOnError(true)
+    m.https.setCertificatesFile("common:/certs/ca-bundle.crt")
+    m.https.initClientCertificates()
+    m.https.AddHeader("Cookie", cookies)
+    port = CreateObject("roMessagePort")
+    m.https.SetMessagePort(port)
+    host = edge.hostname.Split(".")
+    hostname = host[0] + "-query." + host[1] + "." + host[2]
+    url = "https://" + hostname
+    ? "[EdgeTask] URL: " + url
     m.https.SetUrl(url)
+    start_date = CreateObject("roDateTime")
+    start_time = start_date.GetMilliseconds()
     if (m.https.AsyncGetToString())
-      start_date = CreateObject("roDateTime")
-      start_time = start_date.GetMilliseconds()
-      event = wait(1500, m.https.GetPort())
+      event = wait(500, m.https.GetPort())
       if type(event) = "roUrlEvent"
         end_date = CreateObject("roDateTime")
         end_time = end_date.GetMilliseconds()
         time = end_time - start_time
-        if time < m.etime then
-          m.etime = time
-          m.edge = edge.hostname
-        end if
+        ? "[EdgeTask] Edge: " + edge.hostname
+        ? "[EdgeTask] Time: " + time.ToStr()
+        'if time > 0 then
+          if time < m.etime then
+            m.etime = time
+            m.edge = edge.hostname
+          end if
+        'end if
       end if
     end if
   end for

@@ -7,6 +7,7 @@ function init()
 
   m.feedpage = 0
   m.default_edge = "Edge01-na.floatplane.com"
+  'm.default_edge = "Edge03-na.floatplane.com"
   m.live = false
   m.playButtonPressed = false
 
@@ -28,25 +29,33 @@ function init()
 end function
 
 sub onNext(obj)
+  m.login_screen.visible = false
   'Now that we have cookies, we can initialize the video/live player
   initializeVideoPlayer()
-  'Get Edge Servers if necessary
+
+  showUpdateDialog()
+
   registry = RegistryUtil()
-  if registry.read("edge", "hydravion") <> invalid then
-    'Edge Server already set, skip!
-    getSubs(obj)
+  if type(obj) <> "String"
+    'Get Edge Servers
+    'm.edge_task = CreateObject("roSGNode", "edgesUrlTask")
+    'm.edge_task.observeField("response", "onEdges")
+    'edges = "https://www.floatplane.com/api/edges"
+    'm.edge_task.setField("url", edges)
+    'm.edge_task.control = "RUN"
+    registry.write("edge", "edge03-na.floatplane.com", "hydravion")
+    getSubs("")
   else
-    'Edge Server not set, do not skip!
-    m.edge_task = CreateObject("roSGNode", "urlTask")
-    m.edge_task.observeField("response", "onEdges")
-    edges = "https://www.floatplane.com/api/edges"
-    m.edge_task.setField("url", edges)
-    m.edge_task.control = "RUN"
+  ''  if registry.read("edge", "hydravion") = invalid then
+  ''    registry.write("edge", "Edge03-na.floatplane.com", "hydravion")
+  ''  end if
+    getSubs("")
   end if
 end sub
 
 sub onEdges(obj)
   'Find best edge server
+  m.edges = obj.getData()
   m.best_edge = CreateObject("roSGNode", "edgesTask")
   m.best_edge.observeField("bestEdge", "bestEdge")
   m.best_edge.setField("edges", obj.getData())
@@ -72,7 +81,6 @@ sub bestEdge(obj)
 end sub
 
 sub getSubs(obj)
-  m.login_screen.visible = false
   m.subs_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/user/subscriptions"
   m.subs_task.setField("url", url)
@@ -271,18 +279,18 @@ end sub
 
 sub onPreBuffer(obj)
   'Setup videoplayer for prebuffering while user is on detail screen
-  'registry = RegistryUtil()
-  'edge = registry.read("edge", "hydravion")
-  m.details_screen.visible = false
-  m.videoplayer.visible = true
-  m.videoplayer.setFocus(true)
-  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
-  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
+  registry = RegistryUtil()
+  edge = registry.read("edge", "hydravion")
+  'm.details_screen.visible = false
+  'm.videoplayer.visible = true
+  'm.videoplayer.setFocus(true)
+  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
+  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
   ? m.selected_media.url
   m.videoplayer.content = m.selected_media
-  m.videoplayer.visible = false
-  m.videoplayer.setFocus(false)
-  m.videoplayer.control = "prebuffer"
+  'm.videoplayer.visible = false
+  'm.videoplayer.setFocus(false)
+  'm.videoplayer.control = "prebuffer"
   m.details_screen.content = m.selected_media
   m.content_screen.visible = false
   m.details_screen.visible = true
@@ -327,8 +335,7 @@ sub loadLiveStuff(obj)
   'It doesn't like loading straight from the url, so we wrote the m3u8 to a file
   videoContent = createObject("roSGNode", "ContentNode")
   'videoContent.url = "tmp:/live.m3u8"
-  'videoContent.url = obj.DecodeUri()
-  videoContent.url = "https://video-weaver.atl01.hls.ttvnw.net/v1/playlist/CoIFW1ZVhMI2-A6TBpi8zz9_y3ubEwNYWRLurLWTEfiKGCXQYDUQn-fTnYdvdt5kqvycJ_eivF-oDyZge00GigExTjGWugKiLT21Te_EWTRVAFTGXx4NEue1f27jFSXeAWKU2I7n0g4RBQkJ2tYTC4VVhz_pHEVq2pOLeGd2ktTP4dw2YDOQ0RfM7utuvd1md4-Wiwt4vN-5eYECgTtW2IcJNhvpgrwl5dRozc0gzJk_2bj8sA7aKrRErI1XJ80_UjDF_ErHwpsDM4lzihk96MwEJLK96E6ALIOD2HYYmuHeadh_DBvtqadrbuJ91bHjwL6W7BjUN0BZUAkZKfq5Piv0jL9LiXnTxCSGv9apA2xKXH3Spwu-gP8fXAh7CeC1adxwX1o82ScC-cqBUd736pj-huj_eP02YcFxNJnt2nCOBNbsEDHZxI2zb038kAZgcWw_0jMyc4LzrvKzWCvZeKYaTSXkEvUF6qr7wZ59GeniV6usM_Qb2y0sffhB2bc_zVAzIRHXv5tF2WMOn2WmOGepPEl6tbBfYNI971x9CvzPhLGv-jMpXA_o3xSELkH8UO28vCIsJaJ7lEPiam-HzQ2M-r4R-HZfAD3hNgWYCKpbxEsoN4x1vsmizRIp9sOHhJp5qKncVrQwAPUGc1Mx2G9LCjYojnJpVoXdYTsfrOnMcPP5MGkFgiHDeA9U46i_B20Y4luIv05SAKWZuySMehcV_KdcXbnBcckF8tSD_wsG2-hfxGelmPIMnIRbj-rr_XCVKhXxFwPJASqQRpfBTQr3ioGiXd963J7swR1_cef5R4sVutrm7VD8BkWoKWd0hFi6jumy9KlkoTvMoY7oSpAHKa_BEhArhUxp7I0cXXEH1UaxWfpuGgzcZTpPFWfXE0VxIl8.m3u8"
+  videoContent.url = obj.DecodeUri()
   videoContent.StreamFormat = "hls"
   videoContent.PlayStart = 999999999
   videoContent.live = true
@@ -344,11 +351,12 @@ end sub
 sub onPlayVideo(obj)
   registry = RegistryUtil()
   edge = registry.read("edge", "hydravion")
-  ? edge
+  ''? edge
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
   m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
+  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
   ? m.selected_media.url
   m.videoplayer.content = m.selected_media
   m.videoplayer.control = "play"
@@ -360,11 +368,13 @@ sub initializeVideoPlayer()
   cfduid = registry.read("cfduid", "hydravion")
   sails = registry.read("sails", "hydravion")
   cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
+  ? cookies
   m.videoplayer.EnableCookies()
   m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
+  'm.videoplayer.setCertificatesFile("pkg:/certs/certificate.crt")
   m.videoplayer.initClientCertificates()
-  m.videoplayer.SetConnectionTimeout(60)
-  m.videoplayer.AddHeader("Accept", "application/json")
+  m.videoplayer.SetConnectionTimeout(30)
+  'm.videoplayer.AddHeader("Accept", "application/json")
   m.videoplayer.AddHeader("Cookie", cookies)
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
@@ -447,6 +457,18 @@ sub showOptions()
   m.top.getScene().dialog.observeField("buttonSelected","handleOptions")
 end sub
 
+sub showMainOptions()
+  'Create dialog with options to logout or change edge server
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Options"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Select Option"
+  m.top.getScene().dialog.buttons = ["Change Server","Logout"]
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","handleMainOptions")
+end sub
+
 sub showDetailOptions()
   'Grab resolutions available for the video
   m.res_task = CreateObject("roSGNode", "urlTask")
@@ -483,6 +505,51 @@ sub handleDetailOptions()
   m.video_task.setField("url", url)
   m.video_task.observeField("response", "onPlayVideo")
   m.video_task.control = "RUN"
+end sub
+
+sub handleMainOptions()
+  if m.top.getScene().dialog.buttonSelected = 0
+    getEdgeOptions()
+  else if m.top.getScene().dialog.buttonSelected = 1
+    showLogoutDialog()
+  end if
+end sub
+
+sub getEdgeOptions()
+  m.video_task = CreateObject("roSGNode", "urlTask")
+  m.top.getScene().dialog.close = true
+  m.video_task.setField("url", "https://www.floatplane.com/api/edges")
+  m.video_task.observeField("response", "makeEdgeOptions")
+  m.video_task.control = "RUN"
+  'makeEdgeOptions()
+end sub
+
+sub makeEdgeOptions(obj)
+  'Display possible edge servers
+  unparsed = obj.getData()
+  'unparsed = m.edges
+  info = ParseJSON(unparsed)
+  m.ebuttons = createObject("roArray", 7, true)
+  for each edge in info.edges
+    m.ebuttons.Push(edge.hostname)
+  end for
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Edge CDN Servers"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Select a server:"
+  m.top.getScene().dialog.buttons = m.ebuttons
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","handleEdgeOptions")
+end sub
+
+sub handleEdgeOptions()
+  edge = m.ebuttons[m.top.getScene().dialog.buttonSelected]
+  registry = RegistryUtil()
+  registry.write("edge", edge, "hydravion")
+  edge = registry.read("edge", "hydravion")
+  ? "[Edge Server] User selected " + edge
+  m.top.getScene().dialog.close = true
 end sub
 
 sub handleOptions()
@@ -527,6 +594,38 @@ sub doLogout()
   m.login_screen.findNode("username").setFocus(true)
   m.login_screen.findNode("username").text = "username"
   m.login_screen.findNode("password").text = "password"
+end sub
+
+sub showUpdateDialog()
+  registry = RegistryUtil()
+  version = registry.read("version", "hydravion")
+  appInfo = createObject("roAppInfo")
+  if version <> invalid
+    if version <> appInfo.getVersion()
+      doUpdateDialog(appInfo)
+      registry.write("version", appInfo.getVersion(), "hydravion")
+    end if
+  else
+    registry.write("version", appInfo.getVersion(), "hydravion")
+    doUpdateDialog(appInfo)
+  end if
+end sub
+
+sub doUpdateDialog(appInfo)
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  title = "Update " + appInfo.getVersion()
+  updateMsg = "Added ability to select CDN server from main menu (* Options, Change Server). Default is currently set to: edges03-na.floatplane.com"
+  m.top.getScene().dialog.title = title
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = updateMsg
+  m.top.getScene().dialog.buttons = ["OK"]
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
+end sub
+
+sub closeUpdateDialog()
+  m.top.getScene().dialog.close = true
 end sub
 
 function strReplace(basestr As String, oldsub As String, newsub As String) As String
@@ -602,7 +701,8 @@ function onKeyEvent(key, press) as Boolean
       else if m.details_screen.visible = true
         showDetailOptions()
       else
-        showLogoutDialog()
+        'showLogoutDialog()
+        showMainOptions()
       end if
       return true
     end if
