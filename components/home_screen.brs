@@ -324,18 +324,18 @@ sub doLive()
   end if
   url = streamInfo.guid
   ? streamInfo
-  'm.live_task = createObject("roSGNode", "liveTask")
-  'm.live_task.setField("url", url)
-  'm.live_task.observeField("done", "loadLiveStuff")
-  'm.live_task.control = "RUN"
-  loadLiveStuff(url)
+  m.live_task = createObject("roSGNode", "liveTask")
+  m.live_task.setField("url", url)
+  m.live_task.observeField("done", "loadLiveStuff")
+  m.live_task.control = "RUN"
+  'loadLiveStuff(url)
 end sub
 
 sub loadLiveStuff(obj)
   'It doesn't like loading straight from the url, so we wrote the m3u8 to a file
   videoContent = createObject("roSGNode", "ContentNode")
-  'videoContent.url = "tmp:/live.m3u8"
-  videoContent.url = obj.DecodeUri()
+  videoContent.url = "tmp:/live.m3u8"
+  'videoContent.url = obj.DecodeUri()
   videoContent.StreamFormat = "hls"
   videoContent.PlayStart = 999999999
   videoContent.live = true
