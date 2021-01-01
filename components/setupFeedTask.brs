@@ -4,6 +4,7 @@ end sub
 
 function request()
   feed = ParseJSON(m.top.unparsed_feed)
+  '? m.top.unparsed_feed
   postercontent = createObject("roSGNode", "ContentNode")
   if m.top.page <> 0
     'Back page button
@@ -22,19 +23,25 @@ function request()
     end if
   end if
   for each video in feed
-    node = createObject("roSGNode", "ContentNode")
-    'node.HDPosterURL = video.thumbnail.childImages[0].path
-    node.title = video.title
-    node.ShortDescriptionLine1 = video.title
-    node.Description = video.description
-    node.guid = video.guid
-    node.id = video.releaseDate
-    node.streamformat = "hls"
+    if video.metadata.hasVideo = true
+        node = createObject("roSGNode", "ContentNode")
+        node.title = video.title
+        node.ShortDescriptionLine1 = video.title
+        'node.Description = video.description
+        node.Description = video.text
+        node.guid = video.videoAttachments[0]
+        node.id = video.releaseDate
+        node.streamformat = "hls"
     
-    'Check to see if thumbnail is cached
-    node.HDPosterURL = loadCacheImage(video.thumbnail.childImages[0].path)
-
-    postercontent.appendChild(node)
+        'Check to see if thumbnail is cached
+        'node.HDPosterURL = loadCacheImage(video.thumbnail.childImages[0].path)
+        node.HDPosterURL = video.thumbnail.path
+        if video.thumbnail.childImages[0] <> invalid
+            node.HDPosterURL = video.thumbnail.childImages[0].path
+        end if
+    
+        postercontent.appendChild(node)
+    end if
   end for
   'Next page button
   node = createObject("roSGNode", "ContentNode")

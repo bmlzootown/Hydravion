@@ -23,7 +23,8 @@ function request()
   for each subscription in trimmed
     node = createObject("roSGNode", "category_node")
     node.title = subscription.plan.title
-    node.feed_url = "https://www.floatplane.com/api/creator/videos?creatorGUID=" + subscription.creator
+    'node.feed_url = "https://www.floatplane.com/api/creator/videos?creatorGUID=" + subscription.creator
+    node.feed_url = "https://www.floatplane.com/api/v3/content/creator?id=" + subscription.creator
     node.creatorGUID = subscription.creator
     'Grab sub icon
     node.HDPosterURL = loadCacheImage(getImageUrl(subscription.creator))

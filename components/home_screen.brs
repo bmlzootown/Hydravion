@@ -178,6 +178,25 @@ sub onGetStreamInfo(obj)
   end if
 end sub
 
+sub setIfStreaming(obj)
+  info = ParseJSON(obj.getData())
+  ''? info[0].urlname
+  if info[0].liveStream <> invalid  then
+    if info[0].liveStream <> null then
+      m.content_screen.setField("streaming", true)
+    else
+      m.content_screen.setField("streaming", false)
+      'false'
+    end if
+    m.content_screen.setField("streaming", false)
+    'false'
+  else
+    m.content_screen.setField("streaming", false)
+    'false'
+  end if
+  loadFeed(m.feed_url, m.feed_page)
+end sub
+
 sub loadFeed(url, page)
   'Used to load subscription feed given url and page
   after = 20 * page
@@ -261,6 +280,9 @@ sub onSelectedSetup(obj)
     height = "720"
   end if
 
+  'Fix video descriptions
+  m.selected_media.description = info.description
+
   'Show selected media node for debug
   ? m.selected_media
 
@@ -324,18 +346,19 @@ sub doLive()
   end if
   url = streamInfo.guid
   ? streamInfo
-  m.live_task = createObject("roSGNode", "liveTask")
-  m.live_task.setField("url", url)
-  m.live_task.observeField("done", "loadLiveStuff")
-  m.live_task.control = "RUN"
-  'loadLiveStuff(url)
+  if url.Instr("floatplane") > -1 then
+    loadLiveFloat(url)
+  else
+    m.live_task = createObject("roSGNode", "liveTask")
+    m.live_task.setField("url", url)
+    m.live_task.observeField("done", "loadLiveStuff")
+    m.live_task.control = "RUN"
+  end if
 end sub
 
-sub loadLiveStuff(obj)
-  'It doesn't like loading straight from the url, so we wrote the m3u8 to a file
+sub loadLiveFloat(obj)
   videoContent = createObject("roSGNode", "ContentNode")
-  videoContent.url = "tmp:/live.m3u8"
-  'videoContent.url = obj.DecodeUri()
+  videoContent.url = obj
   videoContent.StreamFormat = "hls"
   videoContent.PlayStart = 999999999
   videoContent.live = true
@@ -345,7 +368,24 @@ sub loadLiveStuff(obj)
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
+end sub
 
+sub loadLiveStuff(obj)
+  'It doesn't like loading straight from the url, so we wrote the m3u8 to a file
+  videoContent = createObject("roSGNode", "ContentNode")
+  videoContent.url = "tmp:/live.m3u8"
+  ? videoContent.url
+  'videoContent.url = obj
+  'videoContent.url = "test"
+  videoContent.StreamFormat = "hls"
+  videoContent.PlayStart = 999999999
+  videoContent.live = true
+
+  m.content_screen.visible = false
+  m.videoplayer.visible = true
+  m.videoplayer.setFocus(true)
+  m.videoplayer.content = videoContent
+  m.videoplayer.control = "play"
 end sub
 
 sub onPlayVideo(obj)
@@ -424,25 +464,6 @@ sub closeVideo()
   m.content_screen.visible = true
   m.content_screen.setFocus(true)
   m.playButtonPressed = false
-end sub
-
-sub setIfStreaming(obj)
-  info = ParseJSON(obj.getData())
-  ''? info[0].urlname
-  if info[0].liveStream <> invalid  then
-    if info[0].liveStream <> null then
-      m.content_screen.setField("streaming", true)
-    else
-      m.content_screen.setField("streaming", false)
-      'false'
-    end if
-    m.content_screen.setField("streaming", false)
-    'false'
-  else
-    m.content_screen.setField("streaming", false)
-    'false'
-  end if
-  loadFeed(m.feed_url, m.feed_page)
 end sub
 
 sub showOptions()
@@ -614,7 +635,7 @@ end sub
 sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Added ability to select CDN server from main menu (* Options, Change Server). Default is currently set to: edges03-na.floatplane.com"
+  updateMsg = "Fixed video descriptions, and hopefully didn't re-break livestreams."
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
