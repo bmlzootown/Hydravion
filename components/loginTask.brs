@@ -15,6 +15,7 @@ function request()
   https.initClientCertificates()
 
   data = {
+    "captchaToken": m.top.recaptcha,
     username: m.top.username,
     password: m.top.password
   }
@@ -29,6 +30,7 @@ function request()
       event = wait(10000,port)
       if type(event) = "roUrlEvent"
         code = event.GetResponseCode()
+        ? code.toStr()
         if code = 200
           response = ParseJSON(event.GetString())
           cookies = event.GetResponseHeadersArray()
@@ -43,6 +45,8 @@ function request()
           'print "loginTask done!"
           m.top.cookies = "boop"
         else
+          ? event.getFailureReason().toStr()
+          ? event.GetString()
           m.top.error = code
         end if
       else if event = invalid

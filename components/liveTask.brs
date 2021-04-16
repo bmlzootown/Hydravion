@@ -9,6 +9,6 @@ function request()
   video.SetUrl(m.top.url)
   m3u8 = video.GetToString()
   WriteAsciiFile("tmp:/live.m3u8", m3u8)
-  
+
   m.top.done = true
 end function

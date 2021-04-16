@@ -635,7 +635,7 @@ end sub
 sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Fixed video descriptions, and hopefully didn't re-break livestreams."
+  updateMsg = "Added support for reCAPTCHA tokens."
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""

@@ -47,6 +47,10 @@
       text=""
       focusedKeyColor="0xFFFFFFFF"
       translation="[169,417]" />
+
+    <Timer
+      id="LoginTimer"
+      duration="6" />
   </children>
   <script type="text/brightscript" uri="pkg:/components/screens/login_screen.brs" />
 </component>
