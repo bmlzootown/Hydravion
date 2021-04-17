@@ -158,10 +158,14 @@ sub onGetStreamInfo(obj)
     if info[0].title <> invalid
       'If stream info found, create node
       node = createObject("roSGNode", "ContentNode")
-      node.HDPosterURL = info[0].liveStream.thumbnail.path
+      if info[0].liveStream.thumbnail <> invalid
+        node.HDPosterURL = info[0].liveStream.thumbnail.path
+      end if
       node.title = info[0].liveStream.title
       node.ShortDescriptionLine1 = info[0].liveStream.title
-      node.Description = info[0].liveStream.description
+      if info[0].liveStream.description <> invalid
+        node.Description = info[0].liveStream.description
+      end if
       node.guid = m.streamUri
       node.id = "live"
       node.streamformat = "hls"
@@ -645,7 +649,7 @@ end sub
 sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Fixed some subscriptions not loading content."
+  updateMsg = "Fixed more subs not loading. Mmm, subs... *drools*"
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
