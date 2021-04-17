@@ -110,12 +110,15 @@ sub onCategorySelected(obj)
   'Load feed for specific subscription
   list = m.category_screen.findNode("category_list")
   item = list.content.getChild(obj.getData())
+  ? item.title + " [" + item.creatorGUID + "]"
   m.content_screen.setField("feed_name", item.title)
+
   'Grab stream info
   m.stream_cdn = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/cdn/delivery?type=live&creator=" + item.creatorGUID
   m.stream_cdn.setField("url", url)
   m.stream_cdn.observeField("response", "onGetStreamURL")
+  m.stream_cdn.observeField("error", "onGotStreamError")
   m.stream_cdn.control = "RUN"
   m.creatorGUID = item.creatorGUID
 
@@ -142,6 +145,11 @@ sub onGetStreamURL(obj)
   m.stream_info.setField("url", url)
   m.stream_info.observeField("response", "onGetStreamInfo")
   m.stream_info.control = "RUN"
+end sub
+
+sub onGotStreamError(obj)
+  m.content_screen.setField("streaming", false)
+  loadFeed(m.feed_url, m.feed_page)
 end sub
 
 sub onGetStreamInfo(obj)
@@ -340,19 +348,21 @@ end sub
 sub doLive()
   'Grab stream info from earlier
   streamInfo = m.stream_node
-  if m.top.getScene().dialog <> invalid
-    'If we tried to play the stream from the options dialog, close said dialog
-    m.top.getScene().dialog.close = true
-  end if
-  url = streamInfo.guid
-  ? streamInfo
-  if url.Instr("floatplane") > -1 then
-    loadLiveFloat(url)
-  else
-    m.live_task = createObject("roSGNode", "liveTask")
-    m.live_task.setField("url", url)
-    m.live_task.observeField("done", "loadLiveStuff")
-    m.live_task.control = "RUN"
+  if streamInfo <> invalid
+    if m.top.getScene().dialog <> invalid
+      'If we tried to play the stream from the options dialog, close said dialog
+      m.top.getScene().dialog.close = true
+    end if
+    url = streamInfo.guid
+    ? streamInfo
+    if url.Instr("floatplane") > -1 then
+      loadLiveFloat(url)
+    else
+      m.live_task = createObject("roSGNode", "liveTask")
+      m.live_task.setField("url", url)
+      m.live_task.observeField("done", "loadLiveStuff")
+      m.live_task.control = "RUN"
+    end if
   end if
 end sub
 
@@ -635,7 +645,7 @@ end sub
 sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Updated build version to match pre-compiled w/ reCAPTCHA workaround."
+  updateMsg = "Fixed some subscriptions not loading content."
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""

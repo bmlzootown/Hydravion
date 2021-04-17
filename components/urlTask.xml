@@ -4,6 +4,7 @@
     <interface>
       <field id="url" type="string" />
       <field id="response" type="string" />
+      <field id="error" type="string" />
     </interface>
     <script type="text/brightscript" uri="pkg:/components/urlTask.brs" />
 </component>
