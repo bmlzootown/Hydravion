@@ -3,6 +3,7 @@
     <script type="text/brightscript" uri="pkg:/components/screens/content_screen.brs" />
     <interface>
       <field id="streaming" type="bool" />
+      <field id="stream_node" type="node" />
       <field id="feed_data"
         type="String"
         />
@@ -17,6 +18,8 @@
         type="assocarray"
         alias="content_grid.itemSelected"
         />
+      <field id="itemIndex" type="integer" value="0" alwaysNotify="true" />
+      <field id="jumpTo" type="integer" value="0"/>
     </interface>
     <children>
         <Poster
@@ -42,7 +45,6 @@
           caption2NumLines="1"
           numRows="2"
           numColumns="3">
-
         </PosterGrid>
     </children>
 </component>

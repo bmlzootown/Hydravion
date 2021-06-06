@@ -36,9 +36,8 @@ end function
 
 function getImageUrl(creator) as String
   registry = RegistryUtil()
-  cfduid = registry.read("cfduid", "hydravion")
   sails = registry.read("sails", "hydravion")
-  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
+  cookies = "sails.sid=" + sails
   xfer = CreateObject("roUrlTransfer")
   xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
   xfer.AddHeader("Accept", "application/json")
@@ -55,9 +54,9 @@ end function
 
 function loadCacheImage(url) as String
   registry = RegistryUtil()
-  cfduid = registry.read("cfduid", "hydravion")
+
   sails = registry.read("sails", "hydravion")
-  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
+  cookies = "sails.sid=" + sails
 
   fs = createObject("roFileSystem")
   xfer = createObject("roUrlTransfer")

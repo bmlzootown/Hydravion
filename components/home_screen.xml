@@ -26,6 +26,10 @@
       id="liveplayer"
       visible="false"
       translation="[0,0]" />
+    <Timer
+      id="stream_timer"
+      repeat="true"
+      duration="5" />
   </children>
   <interface>
     <field id="subscriptions" type="string" onChange="onCategoryResponse" />

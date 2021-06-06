@@ -32,14 +32,14 @@ function request()
         node.guid = video.videoAttachments[0]
         node.id = video.releaseDate
         node.streamformat = "hls"
-    
+
         'Check to see if thumbnail is cached
         'node.HDPosterURL = loadCacheImage(video.thumbnail.childImages[0].path)
         node.HDPosterURL = video.thumbnail.path
         if video.thumbnail.childImages[0] <> invalid
             node.HDPosterURL = video.thumbnail.childImages[0].path
         end if
-    
+
         postercontent.appendChild(node)
     end if
   end for
@@ -59,9 +59,8 @@ end function
 
 function loadCacheImage(url) as String
   registry = RegistryUtil()
-  cfduid = registry.read("cfduid", "hydravion")
   sails = registry.read("sails", "hydravion")
-  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
+  cookies = "sails.sid=" + sails
 
   fs = createObject("roFileSystem")
   xfer = createObject("roUrlTransfer")

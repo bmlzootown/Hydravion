@@ -4,6 +4,7 @@ function init()
   m.content_screen = m.top.findNode("content_screen")
   m.details_screen = m.top.findNode("details_screen")
   m.login_screen = m.top.findNode("login_screen")
+  m.streamCheckTimer = m.top.findNode("stream_timer")
 
   m.feedpage = 0
   m.default_edge = "Edge01-na.floatplane.com"
@@ -16,13 +17,17 @@ function init()
   m.login_screen.observeField("next", "onNext")
   m.category_screen.observeField("category_selected", "onCategorySelected")
   m.content_screen.observeField("content_selected", "onContentSelected")
+  m.content_screen.observeField("itemIndex", "onItemFocus")
   m.details_screen.observeField("play_button_pressed", "onPlayButtonPressed")
+  m.streamCheckTimer.observeField("fire","checkStream")
+
+  m.itemFocus = 0
 
   m.supported = m.device.GetSupportedGraphicsResolutions()
   m.arrutil = ArrayUtil()
 
   registry = RegistryUtil()
-  if registry.read("cfduid", "hydravion") <> invalid AND registry.read("sails", "hydravion") <> invalid then
+  if registry.read("sails", "hydravion") <> invalid then
     'Check whether cookies are set, if not we login. If found, we head over to onNext()
     onNext("test")
   end if
@@ -139,6 +144,8 @@ sub onGetStreamURL(obj)
     end for
   end if
   m.streamUri = cdn + uri
+  'TESTING STREAM URI'
+  'm.streamUri = "https://www.bmlzoo.town/test.txt"
 
   m.stream_info = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + m.creatorGUID
@@ -161,8 +168,8 @@ sub onGetStreamInfo(obj)
       if info[0].liveStream.thumbnail <> invalid
         node.HDPosterURL = info[0].liveStream.thumbnail.path
       end if
-      node.title = info[0].liveStream.title
-      node.ShortDescriptionLine1 = info[0].liveStream.title
+      node.title = "LIVE: " + info[0].liveStream.title
+      node.ShortDescriptionLine1 = "LIVE: " + info[0].liveStream.title
       if info[0].liveStream.description <> invalid
         node.Description = info[0].liveStream.description
       end if
@@ -170,43 +177,53 @@ sub onGetStreamInfo(obj)
       node.id = "live"
       node.streamformat = "hls"
       m.stream_node = node
-      'm.content_screen.setField("stream_node", node)
 
-      '#TODO -- check to see if streaming, waiting for API to implement this
-      ''m.stream_check = CreateObject("roSGNode", "urlTask")
-      ''url = "https://www.floatplane.com/api/creator/list?search=" + info[0].urlname
-      ''m.stream_check.setField("url", url)
-      ''m.stream_check.observeField("response", "setIfStreaming")
-      ''m.stream_check.control = "RUN"
-      m.content_screen.setField("streaming", false)
+      'Check to see if creator is actually streaming'
+      'm.stream_check = createObject("roSGNode", "streamCheckTask")
+      'm.stream_check.setField("url", m.streamUri)
+      'm.stream_check.observeField("response", "isStreaming")
+      'm.stream_check.observeField("error", "notStreaming")
+      'm.stream_check.control = "RUN"
+
+      'm.isStreaming = false
+      'loadFeed(m.feed_url, m.feed_page)
+
+      'Start stream check timer'
+      checkStream()
+      m.streamCheckTimer.control = "start"
+      m.isStreaming = false
       loadFeed(m.feed_url, m.feed_page)
     else
-      m.content_screen.setField("streaming", false)
+      m.isStreaming = false
       loadFeed(m.feed_url, m.feed_page)
     end if
   else
-    m.content_screen.setField("streaming", false)
+    m.isStreaming = false
     loadFeed(m.feed_url, m.feed_page)
   end if
 end sub
 
-sub setIfStreaming(obj)
-  info = ParseJSON(obj.getData())
-  ''? info[0].urlname
-  if info[0].liveStream <> invalid  then
-    if info[0].liveStream <> null then
-      m.content_screen.setField("streaming", true)
-    else
-      m.content_screen.setField("streaming", false)
-      'false'
-    end if
-    m.content_screen.setField("streaming", false)
-    'false'
-  else
-    m.content_screen.setField("streaming", false)
-    'false'
-  end if
+sub checkStream()
+  'm.stream_node.guid'
+  'Check to see if creator is actually streaming'
+  m.stream_check = createObject("roSGNode", "streamCheckTask")
+  m.stream_check.setField("url", m.streamUri)
+  m.stream_check.observeField("response", "isStreaming")
+  m.stream_check.observeField("error", "notStreaming")
+  m.stream_check.control = "RUN"
+end sub
+
+sub notStreaming()
+  m.isStreaming = false
+  'loadFeed(m.feed_url, m.feed_page)
+  ? "Streaming: FALSE"
+end sub
+
+sub isStreaming()
+  m.isStreaming = true
+  m.streamCheckTimer.control = "stop"
   loadFeed(m.feed_url, m.feed_page)
+  ? "Streaming: TRUE"
 end sub
 
 sub loadFeed(url, page)
@@ -226,7 +243,8 @@ sub onFeedResponse(obj)
   unparsed_json = obj.getData()
   m.setupFeed_task = createObject("roSGNode", "setupFeedTask")
   m.setupFeed_task.setField("unparsed_feed", unparsed_json)
-  m.setupFeed_task.setField("streaming", false)
+  m.setupFeed_task.setField("streaming", m.isStreaming)
+  ''? m.stream_node
   m.setupFeed_task.setField("stream_node", m.stream_node)
   m.setupFeed_task.setField("page", m.feedpage)
   m.setupFeed_task.observeField("feed", "onFeedSetup")
@@ -234,11 +252,23 @@ sub onFeedResponse(obj)
 end sub
 
 sub onFeedSetup(obj)
+  'Set item focus if stream find after timer run'
+  if m.itemFocus <> 0
+    if m.isStreaming
+      m.content_screen.setField("jumpTo", m.itemFocus + 1)
+    end if
+  end if
+
   'Feed node has been setup, show it to user
   m.content_screen.setField("page", m.feedpage)
   m.content_screen.setField("feed_node", obj.getData())
   m.category_screen.visible = false
   m.content_screen.visible = true
+end sub
+
+sub onItemFocus(event)
+  ''? "New Item Focus: " + event.getData().ToStr()
+  m.itemFocus = event.getData()
 end sub
 
 sub onContentSelected(obj)
@@ -313,6 +343,7 @@ end sub
 
 sub onPreBuffer(obj)
   'Setup videoplayer for prebuffering while user is on detail screen
+  'CURRENTLY NOT IN USE'
   registry = RegistryUtil()
   edge = registry.read("edge", "hydravion")
   'm.details_screen.visible = false
@@ -333,8 +364,6 @@ end sub
 
 sub onPlayButtonPressed(obj)
   if m.live then
-    '#TODO -- waiting for API call for isLive
-    ' Shouldn't need to handle different resolutions as the given m3u8 has that all added in already
     doLive()
   else
     'Video is already prebuffered, we just need to hide the detail screen, focus on the video player, and play the video
@@ -358,10 +387,10 @@ sub doLive()
       m.top.getScene().dialog.close = true
     end if
     url = streamInfo.guid
-    ? streamInfo
+    ''? streamInfo
     if url.Instr("floatplane") > -1 then
       loadLiveFloat(url)
-    else
+      else
       m.live_task = createObject("roSGNode", "liveTask")
       m.live_task.setField("url", url)
       m.live_task.observeField("done", "loadLiveStuff")
@@ -371,6 +400,7 @@ sub doLive()
 end sub
 
 sub loadLiveFloat(obj)
+  'Load livestream from Floatplane CDN'
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = obj
   videoContent.StreamFormat = "hls"
@@ -385,12 +415,10 @@ sub loadLiveFloat(obj)
 end sub
 
 sub loadLiveStuff(obj)
-  'It doesn't like loading straight from the url, so we wrote the m3u8 to a file
+  'Load livestream from 3rd party CDN; doesn't like to load directly, so we have to save it and then read the temporary file'
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = "tmp:/live.m3u8"
-  ? videoContent.url
-  'videoContent.url = obj
-  'videoContent.url = "test"
+  ''? videoContent.url
   videoContent.StreamFormat = "hls"
   videoContent.PlayStart = 999999999
   videoContent.live = true
@@ -405,7 +433,6 @@ end sub
 sub onPlayVideo(obj)
   registry = RegistryUtil()
   edge = registry.read("edge", "hydravion")
-  ''? edge
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
@@ -419,16 +446,13 @@ end sub
 sub initializeVideoPlayer()
   'Setup video player with proper cookies
   registry = RegistryUtil()
-  cfduid = registry.read("cfduid", "hydravion")
   sails = registry.read("sails", "hydravion")
-  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
-  ? cookies
+  cookies = "sails.sid=" + sails
+  ''? cookies
   m.videoplayer.EnableCookies()
   m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
-  'm.videoplayer.setCertificatesFile("pkg:/certs/certificate.crt")
   m.videoplayer.initClientCertificates()
   m.videoplayer.SetConnectionTimeout(30)
-  'm.videoplayer.AddHeader("Accept", "application/json")
   m.videoplayer.AddHeader("Cookie", cookies)
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
@@ -473,8 +497,6 @@ end sub
 sub closeVideo()
   m.videoplayer.control = "stop"
   m.videoplayer.visible = false
-  'm.details_screen.visible = true
-  'm.details_screen.setFocus(true)
   m.content_screen.visible = true
   m.content_screen.setFocus(true)
   m.playButtonPressed = false
@@ -543,6 +565,7 @@ sub handleDetailOptions()
 end sub
 
 sub handleMainOptions()
+  'Determines which option was selected on main screen'
   if m.top.getScene().dialog.buttonSelected = 0
     getEdgeOptions()
   else if m.top.getScene().dialog.buttonSelected = 1
@@ -551,18 +574,17 @@ sub handleMainOptions()
 end sub
 
 sub getEdgeOptions()
+  'Gets list of all edge servers'
   m.video_task = CreateObject("roSGNode", "urlTask")
   m.top.getScene().dialog.close = true
   m.video_task.setField("url", "https://www.floatplane.com/api/edges")
   m.video_task.observeField("response", "makeEdgeOptions")
   m.video_task.control = "RUN"
-  'makeEdgeOptions()
 end sub
 
 sub makeEdgeOptions(obj)
   'Display possible edge servers
   unparsed = obj.getData()
-  'unparsed = m.edges
   info = ParseJSON(unparsed)
   m.ebuttons = createObject("roArray", 7, true)
   for each edge in info.edges
@@ -579,6 +601,7 @@ sub makeEdgeOptions(obj)
 end sub
 
 sub handleEdgeOptions()
+  'Set the newely user-chosen edge server'
   edge = m.ebuttons[m.top.getScene().dialog.buttonSelected]
   registry = RegistryUtil()
   registry.write("edge", edge, "hydravion")
@@ -588,6 +611,7 @@ sub handleEdgeOptions()
 end sub
 
 sub handleOptions()
+  'Determines which option was selected'
   if m.top.getScene().dialog.buttonSelected = 0
     doLive()
   else if m.top.getScene().dialog.buttonSelected = 1
@@ -596,6 +620,7 @@ sub handleOptions()
 end sub
 
 sub showLogoutDialog()
+  'Show logout dialog'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   m.top.getScene().dialog.title = "Logout?"
   m.top.getScene().dialog.optionsDialog = true
@@ -607,6 +632,7 @@ sub showLogoutDialog()
 end sub
 
 sub showLiveDialog()
+  'Show attempt-to-play screen for live streams'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   m.top.getScene().dialog.title = "Play Live Stream?"
   m.top.getScene().dialog.optionsDialog = true
@@ -618,6 +644,7 @@ sub showLiveDialog()
 end sub
 
 sub doLogout()
+  'Logs the user out'
   m.top.getScene().dialog.close = true
   registry = RegistryUtil()
   registry.deleteSection("hydravion")
@@ -632,6 +659,7 @@ sub doLogout()
 end sub
 
 sub showUpdateDialog()
+  'Check whether to show update dialog'
   registry = RegistryUtil()
   version = registry.read("version", "hydravion")
   appInfo = createObject("roAppInfo")
@@ -647,6 +675,7 @@ sub showUpdateDialog()
 end sub
 
 sub doUpdateDialog(appInfo)
+  'Displays update dialog with summary of changes'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
   updateMsg = "Fixed more subs not loading. Mmm, subs... *drools*"
@@ -715,15 +744,16 @@ function onKeyEvent(key, press) as Boolean
     else if m.videoplayer.visible
       m.videoplayer.control = "stop"
       m.videoplayer.visible = false
-      'm.content_screen.visible = false
-      'm.details_screen.visible = true
-      'm.details_screen.setFocus(true)
       m.content_screen.visible = true
       m.details_screen.visible = false
       m.content_screen.setFocus(true)
       m.playButtonPressed = false
       return true
     else if m.content_screen.visible
+      m.streamCheckTimer.control = "stop"
+      m.itemFocus = 0
+      m.content_screen.setField("itemIndex", 0)
+      m.content_screen.setField("jumpTo", 0)
       m.content_screen.visible = false
       m.category_screen.visible = true
       m.category_screen.setFocus(true)
@@ -736,7 +766,6 @@ function onKeyEvent(key, press) as Boolean
       else if m.details_screen.visible = true
         showDetailOptions()
       else
-        'showLogoutDialog()
         showMainOptions()
       end if
       return true

@@ -5,6 +5,8 @@ sub init()
   m.header = m.top.FindNode("header")
   m.top.observeField("visible", "onVisibleChange")
   m.top.observeField("feed_node", "onFeedChanged")
+  m.content_grid.observeField("itemFocused", "OnFocusItem")
+  'm.top.observeField("jumpTo", "jumpTo")
 end sub
 
 sub onFeedChanged(obj)
@@ -16,6 +18,17 @@ sub showpostergrid(content)
   m.content_grid.content = content
   m.content_grid.visible = true
   m.content_grid.setFocus(true)
+  m.content_grid.jumpToItem = m.top.jumpTo
+  ? m.top.jumpTo
+end sub
+
+sub OnFocusItem(event)
+  m.top.itemIndex = event.getData()
+end sub
+
+sub jumpTo(item)
+  ? item.getData()
+  m.content_grid.jumpToItem = item.getData()
 end sub
 
 sub onVisibleChange()

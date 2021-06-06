@@ -10,9 +10,8 @@ function request()
   edges = ParseJSON(unparsed)
 
   registry = RegistryUtil()
-  cfduid = registry.read("cfduid", "hydravion")
   sails = registry.read("sails", "hydravion")
-  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
+  cookies = "sails.sid=" + sails
 
   for each edge in edges.edges
     m.https = CreateObject("roUrlTransfer")
