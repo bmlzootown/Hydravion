@@ -678,7 +678,7 @@ sub doUpdateDialog(appInfo)
   'Displays update dialog with summary of changes'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Fixed more subs not loading. Mmm, subs... *drools*"
+  updateMsg = "Added check for livestreams and other fun stuff!"
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
