@@ -15,15 +15,6 @@ function init()
   m.keyboard = m.top.findNode("inputKeyboard")
   m.keyboard.visible = false
   m.field = ""
-
-  m.LoginTimer = m.top.findNode("LoginTimer")
-  m.LoginTimer.observeField("fire", "getCheckAuth")
-  m.captchaToken = "none"
-  m.linked = false
-
-  deviceInfo = createObject("roDeviceInfo")
-  m.deviceId = deviceInfo.GetChannelClientId()
-  ? "Device ID: " + m.deviceId.toStr()
 end function
 
 sub onInputUsername()
@@ -43,68 +34,14 @@ sub onInputPassword()
 end sub
 
 sub onLoginButton()
-  m.linked = false
-  m.LoginTimer.repeat = true
-  m.LoginTimer.control = "start"
-  getToken()
-end sub
-
-sub getToken()
-  m.getTokenTask = CreateObject("roSGNode", "edgesUrlTask")
-  url = "https://www.bmlzoo.town/hydravion/generate?token=" + m.deviceId
-  m.getTokenTask.setField("url", url)
-  m.getTokenTask.observeField("response", "onToken")
-  m.getTokenTask.control = "RUN"
-end sub
-
-sub onToken(obj)
-  json = ParseJSON(obj.getData())
-  code = json.code
-  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  m.top.getScene().dialog.title = "reCAPTCHA Token"
-  m.top.getScene().dialog.iconUri = ""
-  m.top.getScene().dialog.message = "Navigate to https://bmlzoo.town/hydravion and enter the code: " + code
-end sub
-
-sub getCheckAuth()
-  ? "getCheckAuth"
-  if m.linked
-    m.LoginTimer.repeat = false
-    m.LoginTimer.control = "stop"
-  else
-    m.checkAuthTask = CreateObject("roSGNode", "edgesUrlTask")
-    url = "https://www.bmlzoo.town/hydravion/authenticate?token=" + m.deviceId
-    m.checkAuthTask.setField("url", url)
-    m.checkAuthTask.observeField("response", "onCheckedAuth")
-    m.checkAuthTask.control = "RUN"
-  end if
-end sub
-
-sub onCheckedAuth(obj)
-  json = ParseJSON(obj.getData())
-  if json.linked = "yes"
-    m.top.getScene().dialog.close = true
-    m.linked = true
-    m.LoginTimer.repeat = false
-    m.LoginTimer.control = "stop"
-
-    ? "Old token deleted"
-    m.tossToken = CreateObject("roSGNode", "edgesUrlTask")
-    url = "https://www.bmlzoo.town/hydravion/disconnect?token=" + m.deviceId
-    m.tossToken.setField("url", url)
-    m.tossToken.control = "RUN"
-
-    m.login_task = createObject("roSGNode", "loginTask")
-    ? m.username.text
-    ? m.private
-    ? json.oauth_token
-    m.login_task.setField("username", m.username.text)
-    m.login_task.setField("password", m.private)
-    m.login_task.setField("recaptcha", json.oauth_token)
-    m.login_task.observeField("cookies", "onCookies")
-    m.login_task.observeField("error", "onError")
-    m.login_task.control = "RUN"
-  end if
+  'print m.username.text
+  'print m.password.text
+  m.login_task = createObject("roSGNode", "loginTask")
+  m.login_task.setField("username", m.username.text)
+  m.login_task.setField("password", m.private)
+  m.login_task.observeField("cookies", "onCookies")
+  m.login_task.observeField("error", "onError")
+  m.login_task.control = "RUN"
 end sub
 
 sub onCookies(obj)

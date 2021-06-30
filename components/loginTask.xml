@@ -4,7 +4,6 @@
     <interface>
       <field id="username" type="string" />
       <field id="password" type="string" />
-      <field id="recaptcha" type="string" />
       <field id="cookies" type="string" />
       <field id="needstwoFA" type="bool" />
       <field id="error" type="string" />
