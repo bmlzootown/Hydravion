@@ -56,6 +56,9 @@ sub onNext(obj)
   ''  end if
     getSubs("")
   end if
+  if registry.read("edge", "hydravion") = invalid then
+    registry.write("edge", "edge03-na.floatplane.com", "hydravion")
+  end if
 end sub
 
 sub onEdges(obj)
