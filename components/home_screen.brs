@@ -352,6 +352,7 @@ sub onPreBuffer(obj)
   'm.details_screen.visible = false
   'm.videoplayer.visible = true
   'm.videoplayer.setFocus(true)
+  ? obj.getData()
   m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
   'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
   ? m.selected_media.url
@@ -434,6 +435,14 @@ sub loadLiveStuff(obj)
 end sub
 
 sub onPlayVideo(obj)
+  ? m.selected_media.url
+  if m.resolution <> invalid then
+  ? "RESOLUTION SELECTED: " + m.resolution
+    regexObj = CreateObject("roRegex", "(?<=\/)[0-9]*(?=[.]mp4\/)", "i")
+    regUri = regexObj.match(m.selected_media.url)
+    m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution)
+  end if
+  ? m.selected_media.url
   registry = RegistryUtil()
   edge = registry.read("edge", "hydravion")
   m.details_screen.visible = false
@@ -441,7 +450,7 @@ sub onPlayVideo(obj)
   m.videoplayer.setFocus(true)
   m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
   'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
-  ? m.selected_media.url
+  ''? m.selected_media.url
   m.videoplayer.content = m.selected_media
   m.videoplayer.control = "play"
 end sub
@@ -559,9 +568,12 @@ end sub
 sub handleDetailOptions()
   url = ""
   m.video_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + m.dbuttons[m.top.getScene().dialog.buttonSelected]
+  m.resolution = m.dbuttons[m.top.getScene().dialog.buttonSelected]
+  ? "RESOLUTION: " + m.resolution
+  'url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + m.dbuttons[m.top.getScene().dialog.buttonSelected]
+  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=720"
   m.top.getScene().dialog.close = true
-  '? url
+  ? url
   m.video_task.setField("url", url)
   m.video_task.observeField("response", "onPlayVideo")
   m.video_task.control = "RUN"
@@ -681,7 +693,7 @@ sub doUpdateDialog(appInfo)
   'Displays update dialog with summary of changes'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Removed reCAPTCHA token necessity."
+  updateMsg = "Fixed selecting 4K from detail screen."
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
