@@ -693,7 +693,7 @@ sub doUpdateDialog(appInfo)
   'Displays update dialog with summary of changes'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Fixed selecting 4K from detail screen."
+  updateMsg = "Correct video now plays when post contains two or more."
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""

@@ -1,3 +1,5 @@
 
 *.zip
 *.pkg
+*DS_Store*
+._*

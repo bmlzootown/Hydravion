@@ -16,7 +16,7 @@
 #    Set in your this variable in your shell startup (e.g. .bashrc)
 ##########################################################################
 APPNAME = Hydravion
-VERSION = 1.7
+VERSION = 1.7.1
 
 ZIP_EXCLUDE= -x \*.pkg -x storeassets\* -x keys\* -x \*/.\* ./make.sh
 

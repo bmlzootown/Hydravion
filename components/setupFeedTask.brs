@@ -29,7 +29,7 @@ function request()
         node.ShortDescriptionLine1 = video.title
         'node.Description = video.description
         node.Description = video.text
-        node.guid = video.videoAttachments[0]
+        node.guid = video.attachmentOrder[0]
         node.id = video.releaseDate
         node.streamformat = "hls"
 
