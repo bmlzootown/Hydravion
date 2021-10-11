@@ -147,8 +147,6 @@ sub onGetStreamURL(obj)
     end for
   end if
   m.streamUri = cdn + uri
-  'TESTING STREAM URI'
-  'm.streamUri = "https://www.bmlzoo.town/test.txt"
 
   m.stream_info = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + m.creatorGUID
@@ -180,16 +178,6 @@ sub onGetStreamInfo(obj)
       node.id = "live"
       node.streamformat = "hls"
       m.stream_node = node
-
-      'Check to see if creator is actually streaming'
-      'm.stream_check = createObject("roSGNode", "streamCheckTask")
-      'm.stream_check.setField("url", m.streamUri)
-      'm.stream_check.observeField("response", "isStreaming")
-      'm.stream_check.observeField("error", "notStreaming")
-      'm.stream_check.control = "RUN"
-
-      'm.isStreaming = false
-      'loadFeed(m.feed_url, m.feed_page)
 
       'Start stream check timer'
       checkStream()
@@ -331,29 +319,55 @@ sub onSelectedSetup(obj)
   'Show selected media node for debug
   ? m.selected_media
 
-  m.video_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
-  m.video_task.setField("url", url)
+
+  m.video_pre_task = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/v2/cdn/delivery?type=vod&guid=" + m.selected_media.guid
+  'url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
+  m.video_pre_task.setField("url", url)
+  m.video_pre_task.observeField("response", "onProcessVideoSelected")
+  m.video_pre_task.control = "RUN"
+end sub
+
+sub onProcessVideoSelected(obj)
+  unparsed = obj.getData()
+  info = ParseJSON(unparsed)
+  m.selected_media.url = info.cdn + info.resource.uri
+  m.info = info
+  if m.resolution = invalid then
+    m.resolution = "1080"
+  end if
+
+  'Replace qualityLevels
+  regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevels})(?=[.]mp4\/)", "i")
+  regUri = regexObj.match(m.selected_media.url)
+  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution)
+
+  'Replace qualityLevelsParams.token
+  regexObj = CreateObject("roRegex", "{qualityLevelParams.token}", "i")
+  regUri = regexObj.match(m.selected_media.url)
+  resolutions = info.resource.data.qualityLevelParams
+  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], resolutions.Lookup(m.resolution).token)
+
   if m.playButtonPressed
-    m.video_task.observeField("response", "onPlayVideo")
-    m.video_task.control = "RUN"
+    'We are just going to pass it some info... No need, really, but I will fix this later
+    onPlayVideo(info)
   else
     'User selected video, let's prebuffer while on detail screen
-    m.video_task.observeField("response", "onPreBuffer")
-    m.video_task.control = "RUN"
+    ''Just gonna needlessly pass info here as well
+    onPreBuffer(info)
   end if
 end sub
 
 sub onPreBuffer(obj)
   'Setup videoplayer for prebuffering while user is on detail screen
   'CURRENTLY NOT IN USE'
-  registry = RegistryUtil()
-  edge = registry.read("edge", "hydravion")
+  'registry = RegistryUtil()
+  'edge = registry.read("edge", "hydravion")
   'm.details_screen.visible = false
   'm.videoplayer.visible = true
   'm.videoplayer.setFocus(true)
-  ? obj.getData()
-  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
+  ''? obj.getData()
+  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
   'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
   ? m.selected_media.url
   m.videoplayer.content = m.selected_media
@@ -370,6 +384,7 @@ sub onPlayButtonPressed(obj)
   if m.live then
     doLive()
   else
+    'Prebuffering currently DISABLED
     'Video is already prebuffered, we just need to hide the detail screen, focus on the video player, and play the video
     m.details_screen.visible = false
     m.details_screen.setFocus(false)
@@ -438,17 +453,25 @@ sub onPlayVideo(obj)
   ? m.selected_media.url
   if m.resolution <> invalid then
   ? "RESOLUTION SELECTED: " + m.resolution
-    regexObj = CreateObject("roRegex", "(?<=\/)[0-9]*(?=[.]mp4\/)", "i")
+    ourl =  m.info.cdn + m.info.resource.uri
+    'Replace qualityLevels
+    regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevels})(?=[.]mp4\/)", "i")
+    regUri = regexObj.match(ourl)
+    m.selected_media.url = strReplace(ourl, regUri[0], m.resolution)
+
+    'Replace qualityLevelsParams.token
+    regexObj = CreateObject("roRegex", "{qualityLevelParams.token}", "i")
     regUri = regexObj.match(m.selected_media.url)
-    m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution)
+    resolutions = m.info.resource.data.qualityLevelParams
+    m.selected_media.url = strReplace(m.selected_media.url, regUri[0], resolutions.Lookup(m.resolution).token)
   end if
   ? m.selected_media.url
-  registry = RegistryUtil()
-  edge = registry.read("edge", "hydravion")
+  'registry = RegistryUtil()
+  'edge = registry.read("edge", "hydravion")
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
-  m.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
+  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
   'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
   ''? m.selected_media.url
   m.videoplayer.content = m.selected_media
@@ -571,12 +594,14 @@ sub handleDetailOptions()
   m.resolution = m.dbuttons[m.top.getScene().dialog.buttonSelected]
   ? "RESOLUTION: " + m.resolution
   'url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + m.dbuttons[m.top.getScene().dialog.buttonSelected]
-  url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=720"
+  'url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=720"
   m.top.getScene().dialog.close = true
-  ? url
-  m.video_task.setField("url", url)
-  m.video_task.observeField("response", "onPlayVideo")
-  m.video_task.control = "RUN"
+  ''? url
+  'm.video_task.setField("url", url)
+  'm.video_task.observeField("response", "onPlayVideo")
+  'm.video_task.control = "RUN"
+  m.top.getScene().dialog.close = true
+  onPlayVideo(m.resolution)
 end sub
 
 sub handleMainOptions()
@@ -693,7 +718,7 @@ sub doUpdateDialog(appInfo)
   'Displays update dialog with summary of changes'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Correct video now plays when post contains two or more."
+  updateMsg = "Switched to newer API calls. Videos should now play again!"
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
