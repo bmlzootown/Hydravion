@@ -718,7 +718,7 @@ sub doUpdateDialog(appInfo)
   'Displays update dialog with summary of changes'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Switched to newer API calls. Videos should now play again!"
+  updateMsg = "Fixed 2FA login"
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""

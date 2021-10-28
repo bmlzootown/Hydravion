@@ -15,6 +15,8 @@ function init()
   m.keyboard = m.top.findNode("inputKeyboard")
   m.keyboard.visible = false
   m.field = ""
+
+  m.twoFAClosed = false
 end function
 
 sub onInputUsername()
@@ -66,11 +68,18 @@ sub preparetwoFALogin()
   m.top.getScene().dialog.message = "2FA code is needed to continue!"
   m.top.getScene().dialog.buttons = ["OK"]
   m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("wasClosed", "twoFAClosed")
   m.top.getScene().dialog.observeField("buttonSelected","getCodeKeyboard")
 end sub
 
+sub twoFAClosed()
+  m.twoFAClosed = true
+end sub
+
 sub getCodeKeyboard()
-  m.top.getScene().dialog.close = true
+  if m.twoFAClosed <> true
+    m.top.getScene().dialog.close = true
+  end if
   m.field = "twoFA"
   m.keyboard.text = ""
   m.keyboard.textEditBox.secureMode = false
@@ -93,7 +102,8 @@ end sub
 
 sub ontwoFAError(obj)
   code = obj.getData()
-  getCodeKeyboard()
+  showTwoFAErrorDialog()
+  'getCodeKeyboard()
 end sub
 
 sub onError(obj)
@@ -128,8 +138,24 @@ sub showErrorDialog(msg)
   m.top.getScene().dialog.observeField("buttonSelected","closeDialog")
 end sub
 
+sub showTwoFAErrorDialog()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "2FA Error"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "Authentication code incorrect! Please try again..."
+  m.top.getScene().dialog.buttons = ["OK"]
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.observeField("buttonSelected","closeTwoFAErrorDialog")
+end sub
+
 sub closeDialog()
   m.top.getScene().dialog.close = true
+end sub
+
+sub closeTwoFAErrorDialog()
+  m.top.getScene().dialog.close = true
+  getCodeKeyboard()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean

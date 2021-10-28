@@ -4,9 +4,8 @@ end sub
 
 function request()
   registry = RegistryUtil()
-  cfduid = registry.read("cfduid", "hydravion")
   sails = registry.read("sails", "hydravion")
-  cookies = "__cfduid=" + cfduid + "; sails.sid=" + sails
+  cookies = "sails.sid=" + sails
 
   url = "https://www.floatplane.com/api/auth/checkFor2faLogin"
   https = CreateObject("roUrlTransfer")
