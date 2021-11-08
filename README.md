@@ -5,4 +5,4 @@
 Having issues? Have feedback? Join the [Discord server](https://discord.gg/4xKDGz5M5B)!
 
 
-The non-certified version can be added via access code [5KZLCLZ](https://my.roku.com/add/5KZLCLZ), or you can sideload the source itself.
+The certified version can be added via access code [TCXTKHH](https://my.roku.com/add/TCXTKHH), or you can sideload the source itself.
