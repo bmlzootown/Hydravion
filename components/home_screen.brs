@@ -30,8 +30,34 @@ function init()
   if registry.read("sails", "hydravion") <> invalid then
     'Check whether cookies are set, if not we login. If found, we head over to onNext()
     onNext("test")
+    'Signal that we are logged in and we have completed launch
+    'm.top.signalBeacon("AppDialogComplete")
   end if
+
+  'Signal that launch is complete
+  'sleep(200)
+  m.top.signalBeacon("AppLaunchComplete")
 end function
+
+sub onDeepLinking(obj)
+  'showTestDialog()
+  m.videoplayer.notificationInterval = 1
+  m.videoplayer.observeField("position", "onPlayerPositionChanged")
+  m.videoplayer.observeField("state", "onPlayerStateChanged")
+  videoContent = createObject("roSGNode", "ContentNode")
+  videoContent.url = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+  videoContent.StreamFormat = "mp4"
+  m.videoplayer.visible = true
+  m.videoplayer.setFocus(true)
+  m.videoplayer.content = videoContent
+  m.videoplayer.control = "play"
+  'Required for deep linking
+  m.top.signalBeacon("AppLaunchComplete")
+end sub
+
+sub onRowInput(obj)
+  ? "onRowInputEvent: " + obj.getData()
+end sub
 
 sub onNext(obj)
   m.login_screen.visible = false
@@ -337,16 +363,25 @@ sub onProcessVideoSelected(obj)
     m.resolution = "1080"
   end if
 
-  'Replace qualityLevels
-  regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevels})(?=[.]mp4\/)", "i")
-  regUri = regexObj.match(m.selected_media.url)
-  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution)
-
   'Replace qualityLevelsParams.token
   regexObj = CreateObject("roRegex", "{qualityLevelParams.token}", "i")
   regUri = regexObj.match(m.selected_media.url)
   resolutions = info.resource.data.qualityLevelParams
-  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], resolutions.Lookup(m.resolution).token)
+  ? resolutions
+  res = resolutions.Lookup(m.resolution)
+  ? res
+  if res = Invalid
+    'TODO -- Notify user that default quality wasn't found?
+    key = resolutions.Keys().Peek()
+    res = resolutions.Lookup(key)
+    m.resolution = key
+  end if
+  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], res.token)
+
+  'Replace qualityLevels
+  regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevels})(?=[.]mp4\/)", "i")
+  regUri = regexObj.match(m.selected_media.url)
+  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution)
 
   if m.playButtonPressed
     'We are just going to pass it some info... No need, really, but I will fix this later
@@ -526,6 +561,15 @@ sub showVideoError()
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
   m.top.getScene().dialog.message = "Video cannot be played!"
+  m.top.getScene().dialog.optionsDialog = true
+end sub
+
+sub showTestDialog()
+  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog.title = "Deep Linking Test"
+  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.iconUri = ""
+  m.top.getScene().dialog.message = "This is a test."
   m.top.getScene().dialog.optionsDialog = true
 end sub
 

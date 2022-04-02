@@ -17,6 +17,9 @@ function init()
   m.field = ""
 
   m.twoFAClosed = false
+
+  'Signal that we are showing a login screen
+  'm.top.signalBeacon("AppDialogInitiate")
 end function
 
 sub onInputUsername()
