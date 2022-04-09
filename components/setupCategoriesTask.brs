@@ -41,6 +41,7 @@ function getImageUrl(creator) as String
   xfer = CreateObject("roUrlTransfer")
   xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
   xfer.AddHeader("Accept", "application/json")
+  xfer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   xfer.AddHeader("Cookie", cookies)
   xfer.initClientCertificates()
   xfer.SetUrl("https://www.floatplane.com/api/creator/info?creatorGUID=" + creator)
@@ -63,6 +64,7 @@ function loadCacheImage(url) as String
   xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
   xfer.InitClientCertificates()
   xfer.AddHeader("Accept", "application/json")
+  xfer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   xfer.AddHeader("Cookie", cookies)
 
   filename = url

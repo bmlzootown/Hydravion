@@ -116,7 +116,7 @@ end sub
 
 sub getSubs(obj)
   m.subs_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/user/subscriptions"
+  url = "https://www.floatplane.com/api/v3/user/subscriptions"
   m.subs_task.setField("url", url)
   m.subs_task.observeField("response", "onSubs")
   m.subs_task.control = "RUN"
@@ -523,6 +523,7 @@ sub initializeVideoPlayer()
   m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
   m.videoplayer.initClientCertificates()
   m.videoplayer.SetConnectionTimeout(30)
+  m.videoplayer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   m.videoplayer.AddHeader("Cookie", cookies)
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
@@ -762,7 +763,7 @@ sub doUpdateDialog(appInfo)
   'Displays update dialog with summary of changes'
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
   title = "Update " + appInfo.getVersion()
-  updateMsg = "Fixed 2FA login"
+  updateMsg = "- Fixes requests and properly iterate version"
   m.top.getScene().dialog.title = title
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""

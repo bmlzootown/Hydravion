@@ -15,7 +15,7 @@ function request()
   https.SetUrl(m.top.url)
   https.setCertificatesFile("common:/certs/ca-bundle.crt")
   https.AddHeader("Accept", "application/json")
-  https.AddHeader("User-Agent", "Hydravion (Roku)")
+  https.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   https.AddHeader("Cookie", cookies)
   https.initClientCertificates()
 
@@ -28,6 +28,7 @@ function request()
           m.top.response = event.GetString()
         else
           m.top.error = event.GetString()
+          ? m.top.error
         end if
       else if event = invalid
         https.AsyncCancel()

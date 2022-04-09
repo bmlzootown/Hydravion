@@ -9,6 +9,7 @@ function request()
   'print m.top.url
   https.setCertificatesFile("common:/certs/ca-bundle.crt")
   https.AddHeader("Accept", "application/json")
+  https.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   https.initClientCertificates()
 
   response = https.GetToString()

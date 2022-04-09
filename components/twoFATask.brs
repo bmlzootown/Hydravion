@@ -15,6 +15,7 @@ function request()
   https.SetUrl(url)
   https.setCertificatesFile("common:/certs/ca-bundle.crt")
   https.AddHeader("Content-Type", "application/json")
+  https.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   https.AddHeader("Cookie", cookies)
   https.initClientCertificates()
 

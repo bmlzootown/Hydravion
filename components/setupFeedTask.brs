@@ -67,6 +67,7 @@ function loadCacheImage(url) as String
   xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
   xfer.InitClientCertificates()
   xfer.AddHeader("Accept", "application/json")
+  xfer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   xfer.AddHeader("Cookie", cookies)
 
   filename = url

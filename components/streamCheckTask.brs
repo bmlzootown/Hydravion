@@ -13,7 +13,7 @@ function request()
     timeout: 3000,
     method: "GET",
     headers: {
-        "User-Agent": "Hydravion (Roku)",
+        "User-Agent": "Hydravion (Roku), CFNetwork",
         "Cookie": cookies
     }
   })
