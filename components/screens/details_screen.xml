@@ -18,36 +18,95 @@
 				width="1280"
         height="720"
         translation="[0,0]"
-				opacity="0.2" />
-    <Button
-        id="play_button"
-        text="PLAY"
-        translation="[515, 600]" />
-    <Label
-        id="title"
-        font="font:LargeBoldSystemFont"
-        color="0xFFFFFF"
+				opacity="0.05" />
+		<Poster
+				id="thumbnail"
+				uri="pkg:/images/asterisk.png"
+				width="30"
+				height="30"
+				translation="[1230,20]"
+				opacity="1" />
+    <LayoutGroup
+		translation="[640.0, 50.0]" 
+		vertAlignment="top"
+		horizAlignment="center"
+		itemSpacings="[16]">
+		<LayoutGroup 
+			id="layout_group"
+			translation="[50.0, 50.0]" 
+			itemSpacings="[16]">
+			<Label
+        		id="title"
+        		font="font:LargeBoldSystemFont"
+        		color="0xFFFFFF"
 				wrap="true"
-        width="1180"
+        		width="1180"
 				height="0"
-        text=""
+        		text=""
 				horizAlign="center"
-        translation="[50,50]" />
-    <Label
-        id="date"
-        font="font:SmallSystemFont"
-        color="0xFFFFFF"
+        		translation="[50,50]" />
+    		<Label
+        		id="date"
+        		font="font:SmallSystemFont"
+        		color="0xFFFFFF"
 				width="1180"
 				horizAlign="center"
-        translation="[50,100]" />
-    <Label
-        id="description"
-        font="font:MediumSystemFont"
-        color="0xFFFFFF"
-        wrap="true"
-        width="1180"
-				height="420"
-        text=""
-        translation="[50,170]" />
+        		translation="[50,130]" />
+			<Label
+				id="postType"
+				font="font:SmallSystemFont"
+				height="30"
+				width="1180"
+				color="0xB4B4B4"
+	    		text=""
+				horizAlign="center"
+	    		translation="[50,160]" />
+    		<ScrollableText
+        		id="description"
+        		font="font:MediumSystemFont"
+        		color="0xFFFFFF"
+        		width="1180"
+				height="360"
+        		text=""
+				lineSpacing="4.0"
+        		translation="[50,200]" />
+    	</LayoutGroup>
+		<LayoutGroup
+			id="buttons"
+			layoutDirection="horiz"
+			translation="[120,600]"
+			itemSpacings="[16]">
+				<LayoutGroup
+					id="like_dislike_group"
+					translation="[120,600]"
+					layoutDirection="horiz">
+					<Button
+						id="like"
+						height="60"
+						minWidth="150"
+						maxWidth="200"
+						iconUri="pkg:/images/like.png"
+						focusedIconUri="pkg:/images/like.png"
+        				translation="[180, 600]"/>
+					<Button
+					id="dislike"
+					height="60"
+					minWidth="150"
+					maxWidth="200"
+					iconUri="pkg:/images/dislike.png"
+					focusedIconUri="pkg:/images/dislike.png"
+        			translation="[300, 600]"/>
+				</LayoutGroup>
+			<Button
+        		id="play_button"
+        		text="PLAY"
+				height="60"
+				minWidth="160"
+				maxWidth="160"
+				iconUri="pkg:/images/play.png"
+				focusedIconUri="pkg:/images/play.png"
+        		translation="[560, 600]" />
+		</LayoutGroup>
+	</LayoutGroup>
 	</children>
 </component>

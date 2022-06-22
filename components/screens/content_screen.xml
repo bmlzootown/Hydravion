@@ -30,14 +30,14 @@
           translation="[1230,20]"
           opacity="1" />
         <Label
-          translation="[75, 75]"
+          translation="[50, 30]"
           id="header"
           color="0xFFFFFF"
           font="font:LargeBoldSystemFont"
           text="" />
         <PosterGrid
           id="content_grid"
-          translation="[40,145]"
+          translation="[40,110]"
           scale="[0.7,0.7]"
           basePosterSize="[500,280]"
           itemSpacing="[110,110]"

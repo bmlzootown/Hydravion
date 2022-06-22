@@ -4,7 +4,7 @@ sub Main(args as Dynamic)
   screen.setMessageport(m.port)
   scene = screen.createScene("home_screen")
   scene.observeField("exit", port)
-  screen.Show()
+  screen.Show() ' vscode_rale_tracker_entry
   scene.setFocus(true)
 
   'm.global = screen.getGlobalNode()

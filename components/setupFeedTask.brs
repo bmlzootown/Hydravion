@@ -22,26 +22,81 @@ function request()
       postercontent.appendChild(m.top.stream_node)
     end if
   end if
-  for each video in feed
-    if video.metadata.hasVideo = true
-        node = createObject("roSGNode", "ContentNode")
-        node.title = video.title
-        node.ShortDescriptionLine1 = video.title
-        'node.Description = video.description
-        node.Description = video.text
-        node.guid = video.attachmentOrder[0]
-        node.id = video.releaseDate
+  for each media in feed
+    node = createObject("roSGNode", "media_node")
+    node.title = media.title
+    node.ShortDescriptionLine1 = media.title
+    node.Description = media.text
+    node.id = media.releaseDate
+    node.postId = media.id
+    node.HDPosterURL = media.thumbnail.path
+    if media.thumbnail.childImages[0] <> invalid
+        node.HDPosterURL = media.thumbnail.childImages[0].path
+    end if
+    node.likes = media.likes
+    node.dislikes = media.dislikes
+    node.attachments = media.attachmentOrder
+    postType = CreateObject("roArray", 1, true)
+    postType.shift()
+    if media.metadata.hasVideo = true
+        'node = createObject("roSGNode", "ContentNode")
+        'node.title = media.title
+        'node.ShortDescriptionLine1 = media.title
+        'node.Description = media.text
+        'node.guid = media.attachmentOrder[0]
+        node.videoAttachments = media.videoAttachments
+        node.guid = media.videoAttachments[0]
+        'node.id = media.releaseDate
         node.streamformat = "hls"
-
+        node.hasVideo = true
+        postType.push("Video")
         'Check to see if thumbnail is cached
         'node.HDPosterURL = loadCacheImage(video.thumbnail.childImages[0].path)
-        node.HDPosterURL = video.thumbnail.path
-        if video.thumbnail.childImages[0] <> invalid
-            node.HDPosterURL = video.thumbnail.childImages[0].path
-        end if
+        'node.HDPosterURL = media.thumbnail.path
+        'if media.thumbnail.childImages[0] <> invalid
+        ''    node.HDPosterURL = media.thumbnail.childImages[0].path
+        'end if
 
-        postercontent.appendChild(node)
+        'postercontent.appendChild(node)
     end if
+    if media.metadata.hasAudio = true
+        node.hasAudio = true
+        node.audioAttachments = media.audioAttachments
+        postType.push("Audio")
+    end if
+    if media.metadata.hasPicture = true
+      node.hasPicture = true
+      node.pictureAttachments = media.pictureAttachments
+      postType.push("Picture")
+    end if
+    if media.metadata.hasVideo = false
+      if media.metadata.hasAudio = false
+        if media.metadata.hasPicture = false
+          postType.push("Text")
+        end if
+      end if
+    end if
+
+    d = 0
+    if media.metadata.videoDuration = 0
+      if media.metadata.audioDuration <> 0
+        d = media.metadata.audioDuration
+      end if
+    else
+      d = media.metadata.videoDuration
+    end if
+
+    time = CreateObject("roDateTime")
+    time.FromSeconds(d)
+    duration = getTime(time)
+
+    all_postType = postType.join(", ")
+
+    node.postType = all_postType + "  " + duration
+
+    node.ShortDescriptionLine2 = "" + all_postType + "  " + duration
+    node.ShortDescriptionLine1 = node.title
+    postercontent.appendChild(node)
   end for
   'Next page button
   node = createObject("roSGNode", "ContentNode")
@@ -85,4 +140,32 @@ function loadCacheImage(url) as String
   end if
 
   return filename
+end function
+
+function getTime(dt) as String
+  hours = dt.getHours()
+  mins = dt.getMinutes()
+  seconds = dt.getSeconds()
+
+  sHours = hours.toStr()
+  if sHours.len() = 1  then sHours = "0" + sHours
+
+  sMins = mins.toStr()
+  if sMins.len() = 1  then sMins = "0" + sMins
+
+  sSecs = seconds.toStr()
+  if sSecs.Len() = 1  then sSecs = "0" + sSecs 
+
+  t = ""
+  if sHours <> "00"
+    t += sHours + ":" + sMins + ":" + sSecs
+  else
+    t += sMins + ":" + sSecs
+  end if
+  
+  if sHours = "00" and sMins = "00" and sSecs = "00" then
+    t = ""
+  end if
+
+  return t
 end function

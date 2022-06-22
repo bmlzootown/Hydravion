@@ -21,17 +21,33 @@ function request()
   'Now let's display the subscriptions so the user can select one
   contentNode = createObject("roSGNode", "ContentNode")
   for each subscription in trimmed
+    creator = ParseJSON(getCreatorInfo(subscription.creator))
+
     node = createObject("roSGNode", "category_node")
-    node.title = subscription.plan.title
-    'node.feed_url = "https://www.floatplane.com/api/creator/videos?creatorGUID=" + subscription.creator
+    node.title = creator.title
     node.feed_url = "https://www.floatplane.com/api/v3/content/creator?id=" + subscription.creator
     node.creatorGUID = subscription.creator
     'Grab sub icon
-    node.HDPosterURL = loadCacheImage(getImageUrl(subscription.creator))
+    node.HDPosterURL = loadCacheImage(creator.cover.childImages[0].path)
     contentNode.appendChild(node)
   end for
 
   m.top.category_node = contentNode
+end function
+
+function getCreatorInfo(creator) as String
+  registry = RegistryUtil()
+  sails = registry.read("sails", "hydravion")
+  cookies = "sails.sid=" + sails
+  xfer = CreateObject("roUrlTransfer")
+  xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
+  xfer.AddHeader("Accept", "application/json")
+  xfer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
+  xfer.AddHeader("Cookie", cookies)
+  xfer.initClientCertificates()
+  xfer.SetUrl("https://www.floatplane.com/api/v3/creator/info?id=" + creator)
+
+  return xfer.GetToString()
 end function
 
 function getImageUrl(creator) as String

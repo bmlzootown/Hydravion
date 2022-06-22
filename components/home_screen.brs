@@ -291,6 +291,7 @@ end sub
 sub onContentSelected(obj)
   selected_index = obj.getData()
   m.selected_media = m.content_screen.findNode("content_grid").content.getChild(selected_index)
+  m.selected_index = selected_index
   if m.selected_media.title = "nextpage"
     'User selected next page
     m.feedpage = m.feedpage + 1
@@ -303,24 +304,47 @@ sub onContentSelected(obj)
     end if
   else if m.selected_media.id = "live"
     m.live = true
+    m.selected_media.description = removeHtmlTags(m.selected_media.description)
     m.details_screen.content = m.selected_media
     m.content_screen.visible = false
     m.details_screen.visible = true
     m.details_screen.setFocus(true)
   else
     m.live = false
-    m.selected_task = CreateObject("roSGNode", "urlTask")
-    url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.guid
-    m.selected_task.setField("url", url)
-    m.selected_task.observeField("response", "onSelectedSetup")
-    m.selected_task.control = "RUN"
+    gpi = CreateObject("roSGNode", "urlTask")
+    url = "https://www.floatplane.com/api/v3/content/post?id=" + m.selected_media.postId
+    gpi.setField("url", url)
+    gpi.observeField("response", "onPostInfo")
+    gpi.control = "RUN"
   end if
 end sub
 
-sub onSelectedSetup(obj)
+sub onPostInfo(obj)
+  info = ParseJSON(obj.getData())
+  m.selected_media.userInteraction = info.userInteraction
+
+  if m.selected_media.hasVideo = true
+    m.selected_task = CreateObject("roSGNode", "urlTask")
+    ? m.selected_media.guid
+    ? m.selected_media.videoAttachments
+    url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.videoAttachments[0]
+    m.selected_task.setField("url", url)
+    m.selected_task.observeField("response", "onVideoSelectedSetup")
+    m.selected_task.control = "RUN"
+  else
+    m.selected_media.description = removeHtmlTags(m.selected_media.description)
+    m.details_screen.content = m.selected_media
+    m.content_screen.visible = false
+    m.details_screen.visible = true
+    m.details_screen.setFocus(true)
+  end if
+end sub
+
+sub onVideoSelectedSetup(obj)
   'Got available resolutions for selected video
   unparsed = obj.getData()
   info = ParseJSON(unparsed)
+
   resolutions = createObject("roArray", 10, true)
   'Push parsed resolutions to array for easy access
   for each level in info.levels
@@ -344,6 +368,8 @@ sub onSelectedSetup(obj)
 
   'Show selected media node for debug
   ? m.selected_media
+
+  ? m.selected_media.description
 
 
   m.video_pre_task = CreateObject("roSGNode", "urlTask")
@@ -550,18 +576,19 @@ sub onPlayerStateChanged(obj)
     '-6 DRM error
     error = "[Error " + m.videoplayer.errorCode.ToStr() + "] " + m.videoplayer.errorMsg
     ? error
-    if m.videoplayer.errorCode = -3 or m.videoplayer.errorCode = -2 or m.videoplayer.errorCode = -1
-      showVideoError()
-    end if
+    showVideoError(m.videoplayer.errorCode.ToStr(), m.videoplayer.errorMsg)
+    'if m.videoplayer.errorCode = -3 or m.videoplayer.errorCode = -2 or m.videoplayer.errorCode = -1
+    ' showVideoError(error)
+    'end if
   end if
 end sub
 
-sub showVideoError()
+sub showVideoError(code, error)
   m.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  m.top.getScene().dialog.title = "Error"
+  m.top.getScene().dialog.title = "Error " + code
   m.top.getScene().dialog.optionsDialog = true
   m.top.getScene().dialog.iconUri = ""
-  m.top.getScene().dialog.message = "Video cannot be played!"
+  m.top.getScene().dialog.message = "Video cannot be played! " + error
   m.top.getScene().dialog.optionsDialog = true
 end sub
 
@@ -777,6 +804,11 @@ sub closeUpdateDialog()
   m.top.getScene().dialog.close = true
 end sub
 
+function removeHtmlTags(baseStr as String) as String
+    r = createObject("roRegex", "<[^<]+?>", "i")
+    return r.replaceAll(baseStr, "")
+end function
+
 function strReplace(basestr As String, oldsub As String, newsub As String) As String
     newstr = ""
     i = 1
@@ -824,6 +856,9 @@ function onKeyEvent(key, press) as Boolean
       m.details_screen.visible = false
       m.content_screen.visible = true
       m.content_screen.setFocus(true)
+      m.itemFocus = m.selected_index
+      m.content_screen.setField("itemIndex", m.selected_index)
+      m.content_screen.setField("jumpTo", m.selected_index)
       m.playButtonPressed = false
       return true
     else if m.videoplayer.visible

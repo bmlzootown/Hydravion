@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="media_node" extends="ContentNode" >
+  <interface>
+    <field id="hasVideo" type="boolean" />
+    <field id="hasAudio" type="boolean" />
+    <field id="hasPicture" type="boolean" />
+    <field id="attachments" type="roArray" />
+    <field id="videoAttachments" type="roArray" />
+    <field id="audioAttachments" type="roArray" />
+    <field id="pictureAttachments" type="roArray" />
+    <field id="userInteraction" type="roArray" />
+    <field id="likes" type="integer" />
+    <field id="dislikes" type="integer" />
+    <field id="postType" type="string" />
+    <field id="postId" type="string" />
+  </interface>
+</component>

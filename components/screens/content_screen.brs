@@ -1,12 +1,14 @@
 sub init()
   m.content_grid = m.top.FindNode("content_grid")
   m.content_grid.caption1Font.size = 24
-  m.content_grid.caption2NumLines = 0
+  m.content_grid.caption2NumLines = 1
+  m.content_grid.caption2Font.size = 18
+  m.content_grid.captionLineSpacing = 10.0
   m.header = m.top.FindNode("header")
   m.top.observeField("visible", "onVisibleChange")
   m.top.observeField("feed_node", "onFeedChanged")
   m.content_grid.observeField("itemFocused", "OnFocusItem")
-  'm.top.observeField("jumpTo", "jumpTo")
+  m.top.observeField("jumpTo", "jumpTo")
 end sub
 
 sub onFeedChanged(obj)
