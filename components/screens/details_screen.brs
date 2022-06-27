@@ -30,7 +30,7 @@ sub OnContentChange(obj)
   dt.FromISO8601String(item.id)
   m.date.text = dt.AsDateString("short-month-short-weekday")
 
-  m.postType.text = item.postType
+  m.postType.text = item.ShortDescriptionLine2
 
   'Hide or show play button based on media type
   if item.hasPicture = true

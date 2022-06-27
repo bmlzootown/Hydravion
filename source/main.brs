@@ -5,6 +5,8 @@ sub Main(args as Dynamic)
   scene = screen.createScene("home_screen")
   scene.observeField("exit", port)
   screen.Show() ' vscode_rale_tracker_entry
+  scene.backgroundUri = ""
+  scene.backgroundColor = "0x070b10"
   scene.setFocus(true)
 
   'm.global = screen.getGlobalNode()

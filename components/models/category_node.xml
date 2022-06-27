@@ -3,5 +3,6 @@
   <interface>
     <field id="feed_url" type="string" />
     <field id="creatorGUID" type="string" />
+    <field id="icon" type="string" />
   </interface>
 </component>

@@ -92,7 +92,8 @@ function request()
 
     all_postType = postType.join(", ")
 
-    node.postType = all_postType + "  " + duration
+    node.postType = all_postType
+    node.postDuration = duration
 
     node.ShortDescriptionLine2 = "" + all_postType + "  " + duration
     node.ShortDescriptionLine1 = node.title

@@ -13,5 +13,6 @@
     <field id="dislikes" type="integer" />
     <field id="postType" type="string" />
     <field id="postId" type="string" />
+    <field id="postDuration" type="string" />
   </interface>
 </component>

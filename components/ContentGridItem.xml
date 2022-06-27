@@ -1,0 +1,97 @@
+<?xml version = "1.0" encoding = "utf-8" ?>
+
+<component name = "ContentGridItem" extends = "Group" >
+  <interface> 
+    <field id="itemContent" type="node" onChange="showContent"/>
+    <field id="itemHasFocus" type="Boolean" onChange="onItemFocus"/>
+  </interface>
+  
+  <script type = "text/brightscript" >
+    <![CDATA[
+
+    'attachments
+    'audioAttachments
+    'description
+    'dislikes
+    'duration
+    'guid = videoGUID
+    'hasAudio
+    'hasPicture
+    'hasVideo
+    'hdposterurl
+    'id = date
+    'likes
+    'pictureAttachments
+    'postId = postID
+    'postType = type and duration
+    'shortdescriptionline1 = title
+    'shortdescriptionline2 = postType
+    'title = also title
+    'userInteraction = user liked/disliked
+    'videoAttachment
+
+
+    sub init()
+      m.top.id = "contentgriditem"
+      m.itemposter = m.top.findNode("itemPoster") 
+      m.itemtitle = m.top.findNode("itemTitle")
+      m.itembackground = m.top.findNode("itemBackground")
+      m.posttype = m.top.findNode("postType")
+      m.postduration = m.top.findNode("postDuration")
+    end sub
+    sub showContent()
+      itemcontent = m.top.itemContent
+      m.itemposter.uri = itemcontent.hdposterurl
+      m.itemtitle.text = itemcontent.title
+      m.posttype.text = itemcontent.postType
+      m.postduration.text = itemcontent.postDuration
+      if m.itemtitle.text = "nextpage"
+        m.itemtitle.text = "Next"
+      else if m.itemtitle.text = "backpage"
+        'm.itembackground.visible = false
+        m.itemtitle.text = "Back"
+      end if
+    end sub
+    sub onItemFocus()
+        if m.top.itemHasFocus
+            m.itemtitle.repeatCount = -1
+        else
+            m.itemtitle.repeatCount = 0
+        end if
+    end sub
+
+    ]]>
+  </script>
+
+  <children >
+    <Poster 
+      id = "itemPoster" 
+      translation = "[ 0, 0 ]" 
+      width = "390" 
+      height = "219" 
+      scaleRotateCenter = "[ 256.0, 144.0 ]" />
+    <Rectangle
+        id="itemBackground"
+        color="0x11111100"
+        width="390"
+        height="55"
+        translation="[0,219]">
+        <ScrollingLabel 
+            id="itemTitle"
+            maxWidth="382"
+            repeatCount="0"
+            font="font:SmallestBoldSystemFont"
+            translation = "[ 4, 5 ]" />
+        <Label
+            id="postType"
+            font="font:SmallestSystemFont"
+            translation="[ 4, 30 ]"/>
+        <Label
+            id="postDuration"
+            font="font:SmallestSystemFont"
+            horizAlign="right"
+            width="100"
+            translation="[ 290, 30 ]"/>  
+    </Rectangle>
+  </children>
+</component>

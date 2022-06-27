@@ -146,6 +146,7 @@ sub onCategorySelected(obj)
   item = list.content.getChild(obj.getData())
   ? item.title + " [" + item.creatorGUID + "]"
   m.content_screen.setField("feed_name", item.title)
+  m.content_screen.setField("category_node", item)
 
   'Grab stream info
   m.stream_cdn = CreateObject("roSGNode", "urlTask")
