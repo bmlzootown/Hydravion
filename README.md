@@ -10,16 +10,17 @@ The certified version can be added via access code [TCXTKHH](https://my.roku.com
 </br></br>
 [**Now available on the Roku channel store!**](https://channelstore.roku.com/en-ot/details/96a633034fff363b2a194509d75cb966/hydravion)
 
-
 ## Issues/Feedback
 Having issues? Have feedback? Join the [Discord server](https://discord.gg/4xKDGz5M5B), or open an issue [here](https://github.com/bmlzootown/Hydravion/issues).
 
-## Screenshots
+## Other Platforms
+- [Hydravion-AndroidTV](https://github.com/bmlzootown/Hydravion-AndroidTV) (bmlzootown, NickM-27)
+- [Wasserflug-tvOS](https://github.com/Jman012/Wasserflug-tvOS) (Jman012)
+
+## Screenshots ([Imgur]((https://imgur.com/a/mPSp50T)))
 <p align="center">
     <img src="https://i.imgur.com/zWP7rcz.png" width="500px">
     <img src="https://i.imgur.com/fiMeTVa.png" width="500px">
     <img src="https://i.imgur.com/UwoF11I.png" width="500px">
     <img src="https://i.imgur.com/C14emqp.png" width="500px">
 </p>
-
-[Imgur]((https://imgur.com/a/mPSp50T))
