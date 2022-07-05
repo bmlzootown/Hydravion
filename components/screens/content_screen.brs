@@ -28,7 +28,9 @@ sub showpostergrid(content)
   m.content_grid.visible = true
   m.content_grid.setFocus(true)
   m.cover.uri = m.top.category_node.HDPOSTERURL
-  m.icon.uri = m.top.category_node.icon
+  'm.icon.uri = m.top.category_node.icon
+  m.icon.imageUri = m.top.category_node.icon
+  m.icon.fixsize = true
   'm.content_grid.jumpToItem = m.top.jumpTo
   '? m.top.jumpTo
 end sub

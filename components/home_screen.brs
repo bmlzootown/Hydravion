@@ -8,7 +8,6 @@ function init()
 
   m.feedpage = 0
   m.default_edge = "Edge01-na.floatplane.com"
-  'm.default_edge = "Edge03-na.floatplane.com"
   m.live = false
   m.playButtonPressed = false
 
@@ -24,6 +23,7 @@ function init()
   m.itemFocus = 0
 
   m.supported = m.device.GetSupportedGraphicsResolutions()
+  
   m.arrutil = ArrayUtil()
 
   registry = RegistryUtil()
@@ -56,7 +56,7 @@ sub onDeepLinking(obj)
 end sub
 
 sub onRowInput(obj)
-  ? "onRowInputEvent: " + obj.getData()
+  '? "onRowInputEvent: " + obj.getData()
 end sub
 
 sub onNext(obj)
@@ -323,11 +323,12 @@ end sub
 sub onPostInfo(obj)
   info = ParseJSON(obj.getData())
   m.selected_media.userInteraction = info.userInteraction
+  ? m.selected_media
 
   if m.selected_media.hasVideo = true
     m.selected_task = CreateObject("roSGNode", "urlTask")
-    ? m.selected_media.guid
-    ? m.selected_media.videoAttachments
+    '? m.selected_media.guid
+    '? m.selected_media.videoAttachments
     url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.videoAttachments[0]
     m.selected_task.setField("url", url)
     m.selected_task.observeField("response", "onVideoSelectedSetup")
@@ -347,16 +348,28 @@ sub onVideoSelectedSetup(obj)
   info = ParseJSON(unparsed)
 
   resolutions = createObject("roArray", 10, true)
+  twentyonesixty = false
   'Push parsed resolutions to array for easy access
   for each level in info.levels
     resolutions.Push(level.name)
+    if level.width = 2160 and level.height = 1080
+      twentyonesixty = true
+    end if
   end for
+
   'Loop through supported resolutions, finding highest available that also exists for video
+  ? m.selected_media.title
   height = ""
+  model = m.device.GetModel()
   for i = m.supported.Count() - 1 to 0 step -1
     tv = (strI(m.supported[i].height)).trim()
     if m.arrutil.contains(resolutions, tv)
       height = tv
+      if twentyonesixty = true and height = "1080"
+        if model = "3700X" or model = "3710X" or model = "3600X"
+          height = "720"
+        end if
+      end if
       exit for
     end if
   end for
@@ -364,18 +377,18 @@ sub onVideoSelectedSetup(obj)
     height = "720"
   end if
 
+  'Set the resolution to be used as default for video
+  m.resolution = height
+
   'Fix video descriptions
   m.selected_media.description = info.description
 
-  'Show selected media node for debug
+  'Print selected media node for debug
   ? m.selected_media
-
-  ? m.selected_media.description
 
 
   m.video_pre_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/v2/cdn/delivery?type=vod&guid=" + m.selected_media.guid
-  'url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + height.Trim() + ""
   m.video_pre_task.setField("url", url)
   m.video_pre_task.observeField("response", "onProcessVideoSelected")
   m.video_pre_task.control = "RUN"
@@ -394,9 +407,7 @@ sub onProcessVideoSelected(obj)
   regexObj = CreateObject("roRegex", "{qualityLevelParams.token}", "i")
   regUri = regexObj.match(m.selected_media.url)
   resolutions = info.resource.data.qualityLevelParams
-  ? resolutions
   res = resolutions.Lookup(m.resolution)
-  ? res
   if res = Invalid
     'TODO -- Notify user that default quality wasn't found?
     key = resolutions.Keys().Peek()
@@ -431,7 +442,7 @@ sub onPreBuffer(obj)
   ''? obj.getData()
   'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
   'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
-  ? m.selected_media.url
+  '? m.selected_media.url
   m.videoplayer.content = m.selected_media
   'm.videoplayer.visible = false
   'm.videoplayer.setFocus(false)
@@ -468,7 +479,6 @@ sub doLive()
       m.top.getScene().dialog.close = true
     end if
     url = streamInfo.guid
-    ''? streamInfo
     if url.Instr("floatplane") > -1 then
       loadLiveFloat(url)
       else
@@ -499,7 +509,6 @@ sub loadLiveStuff(obj)
   'Load livestream from 3rd party CDN; doesn't like to load directly, so we have to save it and then read the temporary file'
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = "tmp:/live.m3u8"
-  ''? videoContent.url
   videoContent.StreamFormat = "hls"
   videoContent.PlayStart = 999999999
   videoContent.live = true
@@ -512,9 +521,9 @@ sub loadLiveStuff(obj)
 end sub
 
 sub onPlayVideo(obj)
-  ? m.selected_media.url
+  ? "TITLE: " + m.selected_media.ShortDescriptionLine1
   if m.resolution <> invalid then
-  ? "RESOLUTION SELECTED: " + m.resolution
+    ? "RESOLUTION SELECTED: " + m.resolution
     ourl =  m.info.cdn + m.info.resource.uri
     'Replace qualityLevels
     regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevels})(?=[.]mp4\/)", "i")
@@ -527,17 +536,13 @@ sub onPlayVideo(obj)
     resolutions = m.info.resource.data.qualityLevelParams
     m.selected_media.url = strReplace(m.selected_media.url, regUri[0], resolutions.Lookup(m.resolution).token)
   end if
-  ? m.selected_media.url
-  'registry = RegistryUtil()
-  'edge = registry.read("edge", "hydravion")
+
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
-  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
-  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
-  ''? m.selected_media.url
   m.videoplayer.content = m.selected_media
   m.videoplayer.control = "play"
+
 end sub
 
 sub initializeVideoPlayer()
@@ -545,7 +550,6 @@ sub initializeVideoPlayer()
   registry = RegistryUtil()
   sails = registry.read("sails", "hydravion")
   cookies = "sails.sid=" + sails
-  ''? cookies
   m.videoplayer.EnableCookies()
   m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
   m.videoplayer.initClientCertificates()
@@ -562,7 +566,7 @@ sub onPlayerPositionChanged(obj)
 end sub
 
 sub onPlayerStateChanged(obj)
-  '? "State: ", obj.getData()
+  ? "State: ", obj.getData()
   state = obj.getData()
   if state = "finished"
     'Close video player when finished player
@@ -578,9 +582,6 @@ sub onPlayerStateChanged(obj)
     error = "[Error " + m.videoplayer.errorCode.ToStr() + "] " + m.videoplayer.errorMsg
     ? error
     showVideoError(m.videoplayer.errorCode.ToStr(), m.videoplayer.errorMsg)
-    'if m.videoplayer.errorCode = -3 or m.videoplayer.errorCode = -2 or m.videoplayer.errorCode = -1
-    ' showVideoError(error)
-    'end if
   end if
 end sub
 
@@ -603,6 +604,7 @@ sub showTestDialog()
 end sub
 
 sub closeVideo()
+  m.resolution = invalid
   m.videoplayer.control = "stop"
   m.videoplayer.visible = false
   m.content_screen.visible = true
@@ -665,15 +667,9 @@ sub handleDetailOptions()
   url = ""
   m.video_task = CreateObject("roSGNode", "urlTask")
   m.resolution = m.dbuttons[m.top.getScene().dialog.buttonSelected]
-  ? "RESOLUTION: " + m.resolution
-  'url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=" + m.dbuttons[m.top.getScene().dialog.buttonSelected]
-  'url = "https://www.floatplane.com/api/video/url?guid=" + m.selected_media.guid + "&quality=720"
+  ? "RESOLUTION SELECTED: " + m.resolution
   m.top.getScene().dialog.close = true
-  ''? url
-  'm.video_task.setField("url", url)
-  'm.video_task.observeField("response", "onPlayVideo")
-  'm.video_task.control = "RUN"
-  m.top.getScene().dialog.close = true
+  m.content_screen.setFocus(true)
   onPlayVideo(m.resolution)
 end sub
 
@@ -807,7 +803,7 @@ end sub
 
 function removeHtmlTags(baseStr as String) as String
     r = createObject("roRegex", "<[^<]+?>", "i")
-    return r.replaceAll(baseStr, "")
+    return r.replaceAll(baseStr, " ")
 end function
 
 function strReplace(basestr As String, oldsub As String, newsub As String) As String
@@ -863,11 +859,13 @@ function onKeyEvent(key, press) as Boolean
       m.playButtonPressed = false
       return true
     else if m.videoplayer.visible
+      m.resolution = invalid
       m.videoplayer.control = "stop"
       m.videoplayer.visible = false
       m.content_screen.visible = true
       m.details_screen.visible = false
       m.content_screen.setFocus(true)
+      m.content_screen.FindNode("content_grid").setFocus(true)
       m.playButtonPressed = false
       return true
     else if m.content_screen.visible
