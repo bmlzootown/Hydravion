@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<component name="SimpleDialog" extends="StandardDialog" initialFocus="buttonArea" >
+
+<interface> 
+    <field id="title" type="string" onChange="setTitle"/>
+    <field id="text" type="string" onChange="setText"/>
+    <field id="showCancel" type="boolean" value="false" />
+    <field id="buttons" type="array" onChange="updateButtons" />
+    <field id="itemHasFocus" type="Boolean" onChange="onItemFocus"/>
+  </interface>
+
+<script type="text/brightscript" >
+<![CDATA[
+function init()
+    print "Creating ScrollingContentAreaDialog"
+
+    m.buttonarea = m.top.findNode("buttonArea")
+    m.title = m.top.findNode("title")
+    m.okayButton = m.top.findNode("okayButton")
+    m.cancelButton = m.top.findNode("cancelButton")
+    m.text = m.top.findNode("text")
+    m.buttons = m.top.findNode("buttons")
+
+    m.top.observeFieldScoped("buttonFocused", "printFocusButton")
+    m.top.observeFieldScoped("buttonSelected", "printSelectedButtonAndClose")
+    m.top.observeFieldScoped("wasClosed", "wasClosedChanged")
+
+    if m.top.showCancel = false
+        m.cancelButton.visible = false
+    end if
+end function
+
+sub setTitle(obj)
+    m.title.primaryTitle = obj.getData()
+end sub
+
+sub setText(obj)
+    m.text.text = obj.getData()
+end sub
+
+sub updateButtons(obj)
+    buttons = obj.getData()
+    if (m.buttonarea <> Invalid AND m.buttonarea.getChildCount() > 0)
+        childNodes = m.buttonarea.getChildren(-1, 0)
+        m.buttonarea.removeChildren(childNodes)
+    end if
+
+    if (buttons <> Invalid AND buttons.count() > 0)
+        for each button in buttons
+            buttonNode = createObject("roSGNode", "StdDlgButton")
+            buttonNode.text = button
+            m.buttonarea.appendChild(buttonNode)
+        end for
+        m.buttonarea.getChild(0).setFocus(true)
+    end if
+end sub
+
+sub printFocusButton()
+    print "m.buttonarea button ";m.buttonarea.getChild(m.top.buttonFocused).text;" focused"
+end sub
+
+sub printSelectedButtonAndClose()
+    print "m.buttonarea button ";m.buttonarea.getChild(m.top.buttonSelected).text;" selected"
+    m.top.close = true
+end sub
+
+sub wasClosedChanged()
+    print "ScrollingContentAreaDialog Closed"
+end sub
+
+]]>
+</script>
+
+<children>
+  <StdDlgTitleArea
+    id="title"
+    primaryTitle="" />
+  <StdDlgContentArea>
+     <StdDlgTextItem 
+        id="text"
+        text="" />
+  </StdDlgContentArea>
+  <StdDlgButtonArea id="buttonArea" >
+    <StdDlgButton 
+        id="okayButton"
+        text="OK" />
+    <StdDlgButton 
+        id="cancelButton"
+        text="Cancel" />
+  </StdDlgButtonArea>
+</children>
+
+</component>
