@@ -1,3 +1,5 @@
+' https://github.com/willowtreeapps/rocute -- CircularImageClip Component created by WillowTreeApps, modified by bmlzootown
+
 sub init()
     m.circleChopPoster = m.top.findNode("circleChopPoster")
     m.circleChopPoster.translation = m.top.translation

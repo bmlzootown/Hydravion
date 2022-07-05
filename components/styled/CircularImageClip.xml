@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
+<!-- https://github.com/willowtreeapps/rocute - CircularImageClip Component created by WillowTreeApps, modified by bmlzootown -->
 
 <component name="CircularImageClip" extends="Group" >
   <script type="text/brightscript" uri="pkg:/components/styled/CircularImageClip.brs"/>
