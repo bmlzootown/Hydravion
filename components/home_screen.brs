@@ -776,7 +776,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "Testing"
+  m.top.getScene().dialog.text = "-Updated channel UI" + Chr(10) + "-Updated channel icon/splash" + Chr(10) + "-Added likes/dislikes" + Chr(10) + "-Fix playback on older non-1080 devices" + Chr(10) + "-Removed (some) deprecated code"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
