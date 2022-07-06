@@ -64,13 +64,11 @@ sub onCookies(obj)
 end sub
 
 sub preparetwoFALogin()
-  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "2FactorAuthentication"
-  m.top.getScene().dialog.optionsDialog = true
-  m.top.getScene().dialog.iconUri = ""
-  m.top.getScene().dialog.message = "2FA code is needed to continue!"
-  m.top.getScene().dialog.buttons = ["OK"]
-  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.showCancel = false
+  m.top.getScene().dialog.text = "2FA code is needed to continue!"
+  setupDialogPalette()
   m.top.getScene().dialog.observeField("wasClosed", "twoFAClosed")
   m.top.getScene().dialog.observeField("buttonSelected","getCodeKeyboard")
 end sub
@@ -131,24 +129,20 @@ sub onError(obj)
 end sub
 
 sub showErrorDialog(msg)
-  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Login Error"
-  m.top.getScene().dialog.optionsDialog = true
-  m.top.getScene().dialog.iconUri = ""
-  m.top.getScene().dialog.message = msg
-  m.top.getScene().dialog.buttons = ["OK"]
-  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.showCancel = false
+  m.top.getScene().dialog.text = msg
+  setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeDialog")
 end sub
 
 sub showTwoFAErrorDialog()
-  m.top.getScene().dialog = createObject("roSGNode", "Dialog")
+  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "2FA Error"
-  m.top.getScene().dialog.optionsDialog = true
-  m.top.getScene().dialog.iconUri = ""
-  m.top.getScene().dialog.message = "Authentication code incorrect! Please try again..."
-  m.top.getScene().dialog.buttons = ["OK"]
-  m.top.getScene().dialog.optionsDialog = true
+  m.top.getScene().dialog.showCancel = false
+  m.top.getScene().dialog.text = "Authentication code incorrect! Please try again..."
+  setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeTwoFAErrorDialog")
 end sub
 
@@ -159,6 +153,12 @@ end sub
 sub closeTwoFAErrorDialog()
   m.top.getScene().dialog.close = true
   getCodeKeyboard()
+end sub
+
+sub setupDialogPalette()
+  palette = createObject("roSGNode", "RSGPalette")
+  palette.colors = {   DialogBackgroundColor: "0x152130FF"}
+  m.top.getScene().dialog.palette = palette
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
