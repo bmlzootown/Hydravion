@@ -10,12 +10,17 @@ sub init()
   m.top.observeField("visible", "onVisibleChange")
   m.like_button.observeField("buttonSelected", "onLikeButtonPressed")
   m.dislike_button.observeField("buttonSelected", "onDislikeButtonPressed")
-  m.play_button.setFocus(true)
 end sub
 
 sub onVisibleChange()
   if m.top.visible = true THEN
-    m.play_button.setFocus(true)
+    if m.play_button.visible = false
+      m.play_button.focusable = false
+      m.like_button.setFocus(true)
+    else 
+      m.play_button.focusable = true
+      m.play_button.setFocus(true)
+    end if
   end if
 end sub
 
@@ -125,7 +130,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
       m.like_button.setFocus(true)
       return true
     else if key = "right"
-      m.play_button.setFocus(true)
+      if m.play_button.visible = false
+        m.play_button.focusable = false
+      else 
+        m.play_button.setFocus(true)
+      end if
       return true
     end if
   end if
@@ -142,7 +151,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
       m.play_button.setFocus(true)
       return true
     else if key = "back" or key = "left" or key = "right"
-      m.play_button.setFocus(true)
+      if m.play_button.visible = false
+        m.like_button.setFocus(true)
+      else
+        m.play_button.setFocus(true)
+      end if
       return true
     end if
   end if
