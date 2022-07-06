@@ -586,13 +586,6 @@ sub onPlayerStateChanged(obj)
 end sub
 
 sub showVideoError(code, error)
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Error " + code
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "Video cannot be played! " + error
-  'm.top.getScene().dialog.optionsDialog = true
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Error " + code 
   m.top.getScene().dialog.showCancel = false
@@ -601,13 +594,6 @@ sub showVideoError(code, error)
 end sub
 
 sub showTestDialog()
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Deep Linking Test"
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "This is a test."
-  'm.top.getScene().dialog.optionsDialog = true
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Deep Linking Test"
   m.top.getScene().dialog.showCancel = false
@@ -625,16 +611,6 @@ sub closeVideo()
 end sub
 
 sub showOptions()
-  'Create dialog and populate it with options
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Options"
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "Select Option"
-  'm.top.getScene().dialog.buttons = ["Watch Stream","Logout"]
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.observeField("buttonSelected","handleOptions")
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Options"
   m.top.getScene().dialog.showCancel = false
@@ -645,18 +621,8 @@ sub showOptions()
 end sub
 
 sub showMainOptions()
-  'Create dialog with options to logout or change edge server
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Options"
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "Select Option"
-  'm.top.getScene().dialog.buttons = ["Change Server","Logout"]
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.observeField("buttonSelected","handleMainOptions")
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
-  m.top.getScene().dialog.title = "Resolution"
+  m.top.getScene().dialog.title = "Options"
   m.top.getScene().dialog.showCancel = false
   m.top.getScene().dialog.text = "Select Option"
   m.top.getScene().dialog.buttons = ["Change Server","Logout"]
@@ -681,15 +647,6 @@ sub makeDetailOptions(obj)
   for each level in info.levels
     m.dbuttons.Push(level.name)
   end for
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Resolution"
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "Select Stream Resolution"
-  'm.top.getScene().dialog.buttons = m.dbuttons
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.observeField("buttonSelected","handleDetailOptions")
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Resolution"
   m.top.getScene().dialog.showCancel = false
@@ -735,31 +692,25 @@ sub makeEdgeOptions(obj)
   for each edge in info.edges
     m.ebuttons.Push(edge.hostname)
   end for
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Edge CDN Servers"
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "Select a server:"
-  'm.top.getScene().dialog.buttons = m.ebuttons
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.observeField("buttonSelected","handleEdgeOptions")
 
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
-  m.top.getScene().dialog.title = "Edge CDN Servers"
+  'm.top.getScene().dialog.title = "Edge CDN Servers"
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "Select a server:"
-  m.top.getScene().dialog.buttons = m.ebuttons
+  'm.top.getScene().dialog.text = "Select a server:"
+  'm.top.getScene().dialog.buttons = m.ebuttons
+  m.top.getScene().dialog.title = "Edge Selection Disabled"
+  m.top.getScene().dialog.text = "Edge servers are currently not used -- Floatplane itself provides the CDN server to use."
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","handleEdgeOptions")
 end sub
 
 sub handleEdgeOptions()
   'Set the newely user-chosen edge server'
-  edge = m.ebuttons[m.top.getScene().dialog.buttonSelected]
-  registry = RegistryUtil()
-  registry.write("edge", edge, "hydravion")
-  edge = registry.read("edge", "hydravion")
-  ? "[Edge Server] User selected " + edge
+  'edge = m.ebuttons[m.top.getScene().dialog.buttonSelected]
+  'registry = RegistryUtil()
+  'registry.write("edge", edge, "hydravion")
+  'edge = registry.read("edge", "hydravion")
+  '? "[Edge Server] User selected " + edge
   m.top.getScene().dialog.close = true
 end sub
 
@@ -773,16 +724,6 @@ sub handleOptions()
 end sub
 
 sub showLogoutDialog()
-  'Show logout dialog'
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Logout?"
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "Press OK to logout"
-  'm.top.getScene().dialog.buttons = ["OK"]
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.observeField("buttonSelected","doLogout")
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Logout?"
   m.top.getScene().dialog.showCancel = false
@@ -792,16 +733,6 @@ sub showLogoutDialog()
 end sub
 
 sub showLiveDialog()
-  'Show attempt-to-play screen for live streams'
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'm.top.getScene().dialog.title = "Play Live Stream?"
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = "Press OK to attempt to play live stream"
-  'm.top.getScene().dialog.buttons = ["OK"]
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.observeField("buttonSelected","doLive")
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Play stream?"
   m.top.getScene().dialog.showCancel = false
@@ -842,18 +773,6 @@ sub showUpdateDialog()
 end sub
 
 sub doUpdateDialog(appInfo)
-  'Displays update dialog with summary of changes'
-  'm.top.getScene().dialog = createObject("roSGNode", "Dialog")
-  'title = "Update " + appInfo.getVersion()
-  'updateMsg = "- Fixes requests and properly iterate version"
-  'm.top.getScene().dialog.title = title
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.iconUri = ""
-  'm.top.getScene().dialog.message = updateMsg
-  'm.top.getScene().dialog.buttons = ["OK"]
-  'm.top.getScene().dialog.optionsDialog = true
-  'm.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
-
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
