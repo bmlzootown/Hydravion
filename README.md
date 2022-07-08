@@ -17,7 +17,7 @@ Having issues? Have feedback? Join the [Discord server](https://discord.gg/4xKDG
 - [Hydravion-AndroidTV](https://github.com/bmlzootown/Hydravion-AndroidTV) (bmlzootown, NickM-27)
 - [Wasserflug-tvOS](https://github.com/Jman012/Wasserflug-tvOS) (Jman012)
 
-## Screenshots ([Imgur]((https://imgur.com/a/mPSp50T)))
+## Screenshots ([Imgur](https://imgur.com/a/mPSp50T))
 <p align="center">
     <img src="https://i.imgur.com/zWP7rcz.png" width="500px">
     <img src="https://i.imgur.com/fiMeTVa.png" width="500px">
