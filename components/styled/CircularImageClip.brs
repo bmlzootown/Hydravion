@@ -79,8 +79,8 @@ sub fixSize()
                     mHeight = maskSize[i]
                 end if
             end for
-            mWidth += 50
-            mHeight += 50
+            mWidth += (mWidth/2)
+            mHeight += (mHeight/2)
             m.circleChopMaskGroup.maskSize = [mWidth, mHeight]
         end if
     'end if

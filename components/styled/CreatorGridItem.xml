@@ -1,0 +1,51 @@
+<?xml version = "1.0" encoding = "utf-8" ?>
+
+<component name = "CreatorGridItem" extends = "Group" >
+  <interface> 
+    <field id="itemContent" type="node" onChange="showContent"/>
+    <field id="itemHasFocus" type="Boolean" onChange="onItemFocus"/>
+  </interface>
+  
+  <script type = "text/brightscript" >
+    <![CDATA[
+
+    'node.title = creator.title
+    'node.feed_url = "https://www.floatplane.com/api/v3/content/creator?id=" + subscription.creator
+    'node.creatorGUID = subscription.creator
+    'node.icon = loadCacheImage(creator.icon.path)
+    'node.HDPosterURL = loadCacheImage(creator.cover.childImages[0].path)
+
+    sub init()
+      m.top.id = "creatorgriditem"
+      m.icon = m.top.findNode("creatorIcon") 
+      m.name = m.top.findNode("creatorName")
+    end sub
+
+    sub showContent()
+      itemcontent = m.top.itemContent
+      if itemcontent <> invalid
+        m.name.text = itemcontent.title
+        m.icon.imageUri = itemcontent.icon
+      end if
+    end sub
+
+    sub onItemFocus()
+        
+    end sub
+
+    ]]>
+  </script>
+
+  <children>
+    <CircularImageClip 
+        id="creatorIcon" 
+        height="60" 
+        width="60" 
+        fixsize="true"
+        translation= "[0, 5]" />
+    <Label
+        id="creatorName"
+        font="font:MediumSystemFont"
+        translation="[ 80, 20 ]"/>
+  </children>
+</component>

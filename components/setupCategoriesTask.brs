@@ -27,7 +27,7 @@ function request()
     node.title = creator.title
     node.feed_url = "https://www.floatplane.com/api/v3/content/creator?id=" + subscription.creator
     node.creatorGUID = subscription.creator
-    node.icon = creator.icon.path
+    node.icon = loadCacheImage(creator.icon.path)
     'Grab sub icon
     node.HDPosterURL = loadCacheImage(creator.cover.childImages[0].path)
     contentNode.appendChild(node)

@@ -12,7 +12,7 @@
       translation="[1230,20]"
 			opacity="1" />
     <Poster
-      id="icon"
+      id="background"
       width="1280"
       height="720"
       loadDisplayMode="scaleToZoom"
@@ -22,10 +22,13 @@
       id="env"
       text="Subscriptions:"
       translation="[75,150]" />
-    <RadioButtonList
+    <MarkupList
       id="category_list"
       translation="[100,200]"
-      itemSize="[400,48]" />
+      itemSize="[520,70]"
+      itemSpacing="[10,10]"
+      focusBitmapBlendColor="0xFFFFFF50"
+      itemComponentName="CreatorGridItem" />
   </children>
   <script type="text/brightscript" uri="pkg:/components/screens/category_screen.brs" />
 </component>
