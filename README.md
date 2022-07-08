@@ -21,6 +21,6 @@ Having issues? Have feedback? Join the [Discord server](https://discord.gg/4xKDG
 <p align="center">
     <img src="https://i.imgur.com/zWP7rcz.png" width="500px">
     <img src="https://i.imgur.com/fiMeTVa.png" width="500px">
-    <img src="https://i.imgur.com/UwoF11I.png" width="500px">
+    <img src="https://i.imgur.com/3NccywW.png" width="500px">
     <img src="https://i.imgur.com/C14emqp.png" width="500px">
 </p>
