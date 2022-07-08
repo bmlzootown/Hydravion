@@ -18,6 +18,6 @@
 APPNAME = Hydravion
 VERSION = 2.0.3
 
-ZIP_EXCLUDE= -x \*.pkg -x dist/\* -x \*.gitignore -x \*.DS_Store -x makefile -x \*.md -x .git/\* -x storeassets\* -x keys\* -x \*/.\* ./make.sh
+ZIP_EXCLUDE= -x \*.pkg -x dist/\* -x \*.gitignore -x .vscode/\* -x out/\* -x \*.DS_Store -x makefile -x \*.md -x .git/\* -x storeassets\* -x keys\* -x \*/.\* ./make.sh
 
 include ./app.mk
