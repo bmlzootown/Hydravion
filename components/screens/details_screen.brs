@@ -1,7 +1,8 @@
 sub init()
   m.title = m.top.FindNode("title")
   m.date = m.top.FindNode("date")
-  m.description = m.top.FindNode("description")
+  'm.description = m.top.FindNode("description")
+  m.layout_group = m.top.FindNode("layout_group")
   m.thumbnail = m.top.FindNode("thumbnail")
   m.postType = m.top.FindNode("postType")
   m.play_button = m.top.FindNode("play_button")
@@ -29,7 +30,21 @@ sub OnContentChange(obj)
   m.title.text = item.TITLE
   m.thumbnail.uri = item.HDPOSTERURL
 
+  'Scrolling description to bottom would hide other video descriptions, and with no way to programmatically scroll back to the beginning, we just have to manually create/destroy the ScrollingText object
+  if m.description <> invalid
+    m.layout_group.removeChild(m.description)
+  end if
+  m.description = CreateObject("roSGNode", "ScrollableText")
+  m.description.id = "description"
+  m.description.font = "font:MediumSystemFont"
+  m.description.color = "0xFFFFFF"
+  m.description.width = "1180"
+  m.description.height = "360"
+  m.description.lineSpacing="4.0"
+  m.description.translation="[50,200]"
   m.description.text = item.DESCRIPTION
+
+  m.layout_group.appendChild(m.description)
 
   dt = createObject("roDateTime")
   dt.FromISO8601String(item.id)
@@ -58,16 +73,30 @@ sub OnContentChange(obj)
   m.dislikes = item.dislikes
   m.postId = item.postId
 
+  if item.id = "live"
+    m.like_button.visible = false
+    m.dislike_button.visible = false
+    m.like_button.focusable = false
+    m.dislike_button.focusable = false
+  else
+    m.like_button.visible = true
+    m.dislike_button.visible = true
+    m.like_button.focusable = true
+    m.dislike_button.focusable = true
+  end if
+
   'Set if user has liked or disliked video
   m.dislike_button.opacity = 0.5
   m.like_button.opacity = 0.5
-  for each interaction in item.userInteraction
-    if interaction = "like"
-      m.like_button.opacity = 1
-    else if interaction = "dislike"
-      m.dislike_button.opacity = 1
-    end if
-  end for
+  if item.userInteraction <> invalid
+    for each interaction in item.userInteraction
+      if interaction = "like"
+        m.like_button.opacity = 1
+      else if interaction = "dislike"
+        m.dislike_button.opacity = 1
+      end if
+    end for
+  end if
 end sub
 
 sub onLikeButtonPressed()
@@ -120,8 +149,10 @@ function onKeyEvent(key as string, press as boolean) as boolean
       m.description.setFocus(true)
       return true
     else if key = "left"
-      m.dislike_button.setFocus(true)
-      return true
+      if m.dislike_button.focusable = true
+        m.dislike_button.setFocus(true)
+        return true
+      end if
     end if
   end if
 
