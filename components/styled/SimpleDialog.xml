@@ -13,8 +13,6 @@
 <script type="text/brightscript" >
 <![CDATA[
 function init()
-    print "Creating ScrollingContentAreaDialog"
-
     m.buttonarea = m.top.findNode("buttonArea")
     m.title = m.top.findNode("title")
     m.okayButton = m.top.findNode("okayButton")
@@ -57,16 +55,16 @@ sub updateButtons(obj)
 end sub
 
 sub printFocusButton()
-    print "m.buttonarea button ";m.buttonarea.getChild(m.top.buttonFocused).text;" focused"
+    'print "m.buttonarea button ";m.buttonarea.getChild(m.top.buttonFocused).text;" focused"
 end sub
 
 sub printSelectedButtonAndClose()
-    print "m.buttonarea button ";m.buttonarea.getChild(m.top.buttonSelected).text;" selected"
+    'print "m.buttonarea button ";m.buttonarea.getChild(m.top.buttonSelected).text;" selected"
     m.top.close = true
 end sub
 
 sub wasClosedChanged()
-    print "ScrollingContentAreaDialog Closed"
+    'print "ScrollingContentAreaDialog Closed"
 end sub
 
 ]]>

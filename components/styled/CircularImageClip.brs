@@ -57,7 +57,7 @@ sub setTranslation()
 end sub
 
 sub fixSize()
-    ? "fixSize()"
+    '? "fixSize()"
     m.circleChopMaskGroup = m.top.findNode("circleChopMaskGroup")
     'if (m.top.fixsize = true)
         supp = m.device.GetSupportedGraphicsResolutions()

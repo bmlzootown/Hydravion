@@ -37,7 +37,7 @@ end sub
 
 sub OnFocusItem(event)
   m.top.itemIndex = event.getData()
-  ? event.getData()
+  '? event.getData()
   if event.getData() > 2 and m.visibleCover = true
     m.hideHeader.control = "start"
     m.visibleCover = false
@@ -48,7 +48,7 @@ sub OnFocusItem(event)
 end sub
 
 sub jumpTo(item)
-  ? item.getData()
+  '? item.getData()
   'm.content_grid.jumpToItem = item.getData()
 end sub
 
