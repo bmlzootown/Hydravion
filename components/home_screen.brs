@@ -272,7 +272,7 @@ end sub
 sub onFeedSetup(obj)
   'Set item focus if stream find after timer run'
   if m.itemFocus <> 0
-    if m.isStreaming
+    if m.isStreaming <> INVALID and m.isStreaming
       m.content_screen.setField("jumpTo", m.itemFocus + 1)
     end if
   end if
