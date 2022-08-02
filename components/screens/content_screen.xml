@@ -29,8 +29,11 @@
           maskUri="pkg:/images/gradient.png">
           <Poster
             id="cover"
+            loadDisplayMode = "scaleToFit"
             width="1230"
             height="321"
+            loadWidth="1230"
+            loadHeight="321"
             translation="[ 25, 25]" />
         </MaskGroup>
 		    <CircularImageClip 
@@ -41,8 +44,11 @@
         <Poster
           id="thumbnail"
           uri="pkg:/images/asterisk.png"
+          loadDisplayMode = "scaleToFit"
           width="30"
           height="30"
+          loadWidth="30"
+          loadHeight="30"
           translation="[1215,35]"
           opacity="1" />
         <!--<Button

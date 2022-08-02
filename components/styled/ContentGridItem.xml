@@ -67,8 +67,11 @@
     <Poster 
       id = "itemPoster" 
       translation = "[ 0, 0 ]" 
+      loadDisplayMode = "scaleToFit"
       width = "390" 
       height = "219" 
+      loadWidth="390"
+      loadHeight = "219"
       scaleRotateCenter = "[ 256.0, 144.0 ]" />
     <Rectangle
         id="itemBackground"
