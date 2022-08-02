@@ -66,6 +66,13 @@ sub OnContentChange(obj)
     m.play_button.visible = false
   end if
 
+  'Hide or show date if media type is VOD or live
+  if item.id = "live"
+    m.date.visible = false
+  else 
+    m.date.visible = true
+  end if
+
   'Set the number of current likes/dislikes for video
   m.like_button.text = item.likes
   m.dislike_button.text = item.dislikes
