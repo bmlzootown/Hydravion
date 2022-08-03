@@ -85,9 +85,9 @@ function loadCacheImage(url) as String
   xfer.AddHeader("Cookie", cookies)
 
   filename = url
-  filename = mid(filename, instr(filename, "//") + 1)
-  while instr(filename, "/") > 0
-    filename = mid(filename, instr(filename, "/") + 1)
+  filename = mid(filename, instr(1, filename, "//") + 1)
+  while instr(1, filename, "/") > 0
+    filename = mid(filename, instr(1, filename, "/") + 1)
   end while
 
   if not fs.Exists("cachefs:/" + filename) then

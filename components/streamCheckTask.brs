@@ -38,27 +38,27 @@ function fetch(options)
 
     response = invalid
     port = CreateObject("roMessagePort")
-    request = CreateObject("roUrlTransfer")
-    request.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    request.InitClientCertificates()
-    request.RetainBodyOnError(true)
-    request.SetMessagePort(port)
+    re = CreateObject("roUrlTransfer")
+    re.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    re.InitClientCertificates()
+    re.RetainBodyOnError(true)
+    re.SetMessagePort(port)
     if options.headers <> invalid
         for each header in options.headers
             val = options.headers[header]
-            if val <> invalid then request.addHeader(header, val)
+            if val <> invalid then re.addHeader(header, val)
         end for
     end if
     if options.method <> invalid
-        request.setRequest(options.method)
+        re.setRequest(options.method)
     end if
-    request.SetUrl(options.url)
+    re.SetUrl(options.url)
 
     requestSent = invalid
     if options.body <> invalid
-        requestSent = request.AsyncPostFromString(options.body)
+        requestSent = re.AsyncPostFromString(options.body)
     else
-        requestSent = request.AsyncGetToString()
+        requestSent = re.AsyncGetToString()
     end if
     if (requestSent)
         msg = wait(timeout, port)
