@@ -22,10 +22,6 @@
       id="videoplayer"
       visible="false"
       translation="[0,0]" />
-    <Video
-      id="liveplayer"
-      visible="false"
-      translation="[0,0]" />
     <Timer
       id="stream_timer"
       repeat="true"
