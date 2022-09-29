@@ -6,6 +6,9 @@ end sub
 function request()
   registry = RegistryUtil()
   sails = registry.read("sails", "hydravion")
+  if sails = invalid then
+    m.top.error = "Invalid SAILS cookie!"
+  end if
   cookies = "sails.sid=" + sails
 
   https = CreateObject("roUrlTransfer")
