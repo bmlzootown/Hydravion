@@ -165,14 +165,14 @@ sub onGetStreamURL(obj)
   json = ParseJSON(obj.getData())
   cdn = json.cdn
   uri = json.resource.uri
-  if json.resource.data <> invalid
-    regexObj = CreateObject("roRegex", "\{(.*?)\}", "i")
-    regUri = regexObj.matchAll(uri)
-    for i = 0 to regUri.Count() - 1
-      data = json.resource.data[regUri[i][1]]
-      uri = strReplace(uri, regUri[i][0], data)
-    end for
-  end if
+  'if json.resource.data <> invalid
+  '  regexObj = CreateObject("roRegex", "\{(.*?)\}", "i")
+  '  regUri = regexObj.matchAll(uri)
+  '  for i = 0 to regUri.Count() - 1
+  '    data = json.resource.data[regUri[i][1]]
+  '    uri = strReplace(uri, regUri[i][0], data)
+  '  end for
+  'end if
   m.streamUri = cdn + uri
 
   m.stream_info = CreateObject("roSGNode", "urlTask")
@@ -403,23 +403,27 @@ sub onProcessVideoSelected(obj)
     m.resolution = "1080"
   end if
 
+  'Replace qualityLevels
+  regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevelParams.2})", "i")
+  regUri = regexObj.match(m.selected_media.url)
+  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution + ".mp4")
+
   'Replace qualityLevelsParams.token
-  regexObj = CreateObject("roRegex", "{qualityLevelParams.token}", "i")
+  regexObj = CreateObject("roRegex", "{qualityLevelParams.4}", "i")
   regUri = regexObj.match(m.selected_media.url)
   resolutions = info.resource.data.qualityLevelParams
-  res = resolutions.Lookup(m.resolution)
-  if res = Invalid
-    'TODO -- Notify user that default quality wasn't found?
-    key = resolutions.Keys().Peek()
-    res = resolutions.Lookup(key)
-    m.resolution = key
-  end if
-  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], res.token)
-
-  'Replace qualityLevels
-  regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevels})(?=[.]mp4\/)", "i")
-  regUri = regexObj.match(m.selected_media.url)
-  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution)
+  resName = ""
+  for each r in info.resource.data.qualityLevels
+    if r.label.Instr(m.resolution) > -1 then
+      resName = r.name
+    else
+      'TODO -- Notify user that default quality wasn't found?
+      key = resolutions.Keys().Peek()
+      resName = key
+    end if
+  end for
+  res = resolutions.Lookup(resName)
+  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], res["4"])
 
   if m.playButtonPressed
     'We are just going to pass it some info... No need, really, but I will fix this later
