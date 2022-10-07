@@ -58,9 +58,9 @@
       if dur <> Invalid AND progress <> Invalid then
         if dur <> 0 then
           if progress >= dur then
-            m.progressbar.width = 390
+            m.progressbar.width = 389.5
           else
-            m.progressbar.width = (progress/dur)*390
+            m.progressbar.width = (progress/dur)*389.5
           end if
         end if
       else
@@ -79,48 +79,43 @@
   </script>
 
   <children >
-    <LayoutGroup
-		  translation="[0, 0]" 
-		  vertAlignment="top"
-		  horizAlignment="left"
-		  itemSpacings="[1]">
-      <Poster 
-        id = "itemPoster" 
-        translation = "[ 0, 0 ]" 
-        loadDisplayMode = "scaleToFit"
-        width = "390" 
-        height = "219" 
-        loadWidth="390"
-        loadHeight = "219"
-        scaleRotateCenter = "[ 256.0, 144.0 ]" />
-      <Rectangle
-			   id="progressBar"
-			  color="0xFF0000" 
-        width = "0"
-        height = "5" />
-      <Rectangle
-        id="itemBackground"
-        color="0x11111100"
-        width="390"
-        height="55"
-        translation="[0,219]">
-        <ScrollingLabel 
-            id="itemTitle"
-            maxWidth="382"
-            repeatCount="0"
-            font="font:SmallestBoldSystemFont"
-            translation = "[ 4, 5 ]" />
-        <Label
-            id="postType"
-            font="font:SmallestSystemFont"
-            translation="[ 4, 30 ]"/>
-        <Label
-            id="postDuration"
-            font="font:SmallestSystemFont"
-            horizAlign="right"
-            width="100"
-            translation="[ 290, 30 ]"/>  
-      </Rectangle>
-    </LayoutGroup>
+    <Poster 
+      id = "itemPoster" 
+      translation = "[ 0, 0 ]" 
+      loadDisplayMode = "scaleToFit"
+      width = "390" 
+      height = "219" 
+      loadWidth="390"
+      loadHeight = "219"
+      scaleRotateCenter = "[ 256.0, 144.0 ]" />
+    <Rectangle
+		  id="progressBar"
+      translation = "[ 0.5, 220 ]" 
+		  color="0x00AFEC" 
+      width = "0"
+      height = "4" />
+    <Rectangle
+      id="itemBackground"
+      color="0x11111100"
+      width="390"
+      height="55"
+      translation="[0,226]">
+      <ScrollingLabel 
+        id="itemTitle"
+        maxWidth="382"
+        repeatCount="0"
+        font="font:SmallestBoldSystemFont"
+        translation = "[ 4, 5 ]" />
+      <Label
+        id="postType"
+        font="font:SmallestSystemFont"
+        translation="[ 4, 30 ]"/>
+      <Label
+        id="postDuration"
+        font="font:SmallestSystemFont"
+        horizAlign="right"
+        width="100"
+        translation="[ 290, 30 ]"/>  
+    </Rectangle>
   </children>
 </component>
