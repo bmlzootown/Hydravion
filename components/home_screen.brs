@@ -876,7 +876,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "-"
+  m.top.getScene().dialog.text = "-Added progress bar" + Chr(10) + "-Added resume feature" + Chr(10) + "-Implemented syncing of video progress with FP API"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
