@@ -6,6 +6,7 @@ sub init()
   m.thumbnail = m.top.FindNode("thumbnail")
   m.postType = m.top.FindNode("postType")
   m.play_button = m.top.FindNode("play_button")
+  m.resume_button = m.top.FindNode("resume_button")
   m.like_button = m.top.FindNode("like")
   m.dislike_button = m.top.FindNode("dislike")
   m.top.observeField("visible", "onVisibleChange")
@@ -21,6 +22,9 @@ sub onVisibleChange()
     else 
       m.play_button.focusable = true
       m.play_button.setFocus(true)
+      if m.resume_button.focusable = true then
+        m.resume_button.setFocus(true)
+      end if
     end if
   end if
 end sub
@@ -64,6 +68,34 @@ sub OnContentChange(obj)
   end if
   if item.hasAudio = false AND item.hasVideo = false
     m.play_button.visible = false
+  end if
+
+  'Hide or show resume button based on progress
+  m.resume_button.visible = false
+  m.resume_button.focusable = false
+  if item.hasVideo = true
+    ? "DURATION: " + item.duration.ToStr()
+    ? "PROGRESS: " + item.progress.ToStr()
+    if (item.progress <> 0) AND (item.progress < item.duration)
+      m.resume_button.visible = true
+      m.resume_button.focusable = true
+      m.play_button.text = "RESTART"
+      m.play_button.maxWidth = 220
+      m.play_button.minWidth = 220
+      m.play_button.iconUri="pkg:/images/replay.png"
+      m.play_button.focusedIconUri="pkg:/images/replay.png"
+      m.resume_button.maxWidth = 200
+      m.resume_button.minWidth = 200
+      m.resume_button.setFocus(true)
+    else
+      m.play_button.text = "PLAY"
+      m.play_button.maxWidth = 160
+      m.play_button.minWidth = 160
+      m.play_button.iconUri="pkg:/images/play.png"
+      m.play_button.focusedIconUri="pkg:/images/play.png"
+      m.resume_button.maxWidth = 0
+      m.resume_button.minWidth = 0
+    end if
   end if
 
   'Hide or show date if media type is VOD or live
@@ -160,6 +192,20 @@ function onKeyEvent(key as string, press as boolean) as boolean
         m.dislike_button.setFocus(true)
         return true
       end if
+    else if key = "right"
+      if m.resume_button.focusable = true
+        m.resume_button.setFocus(true)
+        return true
+      end if
+    end if
+  end if
+
+  if m.resume_button.hasFocus()
+    if key = "up"
+      m.description.setFocus(true)
+      return true
+    else if key = "left"
+      m.play_button.setFocus(true)
     end if
   end if
 

@@ -1,11 +1,11 @@
 sub init()
   m.top.functionname = "request"
+  m.postercontent = createObject("roSGNode", "ContentNode")
 end sub
 
 function request()
   feed = ParseJSON(m.top.unparsed_feed)
   '? m.top.unparsed_feed
-  postercontent = createObject("roSGNode", "ContentNode")
   if m.top.page <> 0
     'Back page button
     node = createObject("roSGNode", "ContentNode")
@@ -16,12 +16,16 @@ function request()
     node.guid = ""
     node.id = ""
     node.streamformat = ""
-    postercontent.appendChild(node)
+    m.postercontent.appendChild(node)
   else
     if m.top.streaming then
-      postercontent.appendChild(m.top.stream_node)
+      m.postercontent.appendChild(m.top.stream_node)
     end if
   end if
+  vidIds = {
+    "ids":[],
+    "contentType":"video"
+  }
   for each media in feed
     node = createObject("roSGNode", "media_node")
     node.title = media.title
@@ -46,6 +50,8 @@ function request()
         'node.guid = media.attachmentOrder[0]
         node.videoAttachments = media.videoAttachments
         node.guid = media.videoAttachments[0]
+        node.duration = media.metadata.videoDuration
+        vidIds.ids.Push(node.guid)
         'node.id = media.releaseDate
         node.streamformat = "hls"
         node.hasVideo = true
@@ -97,8 +103,15 @@ function request()
 
     node.ShortDescriptionLine2 = "" + all_postType + "  " + duration
     node.ShortDescriptionLine1 = node.title
-    postercontent.appendChild(node)
+    m.postercontent.appendChild(node)
   end for
+  getProgress = CreateObject("roSGNode", "postTask")
+  url = "https://www.floatplane.com/api/v3/content/get/progress"
+  getProgress.setField("url", url)
+  getProgress.setField("body", vidIds)
+  getProgress.observeField("response", "gotProgress")
+  getProgress.control = "RUN"
+
   'Next page button
   node = createObject("roSGNode", "ContentNode")
   node.HDPosterURL = "pkg:/images/next_page.png"
@@ -108,10 +121,23 @@ function request()
   node.guid = ""
   node.id = ""
   node.streamformat = ""
-  postercontent.appendChild(node)
+  m.postercontent.appendChild(node)
 
-  m.top.feed = postercontent
+  'm.top.feed = postercontent
 end function
+
+sub gotProgress(obj)
+  progress = ParseJson(obj.getData())
+  for each p in progress
+    for each node in m.postercontent.getChildren(-1, 0) 
+      if node.guid = p.id 
+        node.progress = p.progress
+      end if
+    end for
+  end for
+
+  m.top.feed = m.postercontent
+end sub
 
 function loadCacheImage(url) as String
   registry = RegistryUtil()
