@@ -220,6 +220,9 @@ function onKeyEvent(key as string, press as boolean) as boolean
         m.play_button.setFocus(true)
       end if
       return true
+    else if key = "up"
+      m.description.setFocus(true)
+      return true
     end if
   end if
 
@@ -227,12 +230,19 @@ function onKeyEvent(key as string, press as boolean) as boolean
     if key = "right"
       m.dislike_button.setFocus(true)
       return true
+    else if key = "up"
+      m.description.setFocus(true)
+      return true
     end if
   end if
 
   if m.description.hasFocus()
     if key = "down"
-      m.play_button.setFocus(true)
+      if m.play_button.focusable = true then
+        m.play_button.setFocus(true)
+      else
+        m.like_button.setFocus(true)
+      end if
       return true
     else if key = "back" or key = "left" or key = "right"
       if m.play_button.visible = false
