@@ -68,54 +68,8 @@ sub onNext(obj)
 
   showUpdateDialog()
 
-  'registry = RegistryUtil()
-  'if type(obj) <> "String"
-    'Get Edge Servers
-    'm.edge_task = CreateObject("roSGNode", "edgesUrlTask")
-    'm.edge_task.observeField("response", "onEdges")
-    'edges = "https://www.floatplane.com/api/edges"
-    'm.edge_task.setField("url", edges)
-    'm.edge_task.control = "RUN"
-    'registry.write("edge", "edge03-na.floatplane.com", "hydravion")
-    'getSubs("")
-  'else
-  ''  if registry.read("edge", "hydravion") = invalid then
-  ''    registry.write("edge", "Edge03-na.floatplane.com", "hydravion")
-  ''  end if
-  '  getSubs("")
-  'end if
-  'if registry.read("edge", "hydravion") = invalid then
-  '  registry.write("edge", "edge03-na.floatplane.com", "hydravion")
-  'end if
   getSubs("")
 end sub
-
-'sub onEdges(obj)
-'  'Find best edge server
-'  m.edges = obj.getData()
-'  m.best_edge = CreateObject("roSGNode", "edgesTask")
-'  m.best_edge.observeField("bestEdge", "bestEdge")
-'  m.best_edge.setField("edges", obj.getData())
-'  m.best_edge.control = "RUN"
-'end sub
-
-'sub bestEdge(obj)
-'  'Got best edge, set best edge
-'  registry = RegistryUtil()
-'  edge = obj.getData()
-'  if edge = "" then
-'    'Edge didn't return, so let's just use the default
-'    registry.write("edge", m.default_edge, "hydravion")
-'  else if edge.Instr(m.default_edge) > -1 then
-'    'Edge found, not default, so let's use it
-'    registry.write("edge", m.default_edge, "hydravion")
-'  else
-'    'In case something else happens, just use the default
-'    registry.write("edge", edge, "hydravion")
-'  end if
-'  'Get subs
-'  getSubs(obj)
-'end sub
 
 sub getSubs(obj)
   m.subs_task = CreateObject("roSGNode", "urlTask")
@@ -761,45 +715,6 @@ sub handleMainOptions()
     'showLogoutDialog()
   end if
 end sub
-
-'sub getEdgeOptions()
-'  'Gets list of all edge servers'
-'  m.video_task = CreateObject("roSGNode", "urlTask")
-'  m.top.getScene().dialog.close = true
-'  m.video_task.setField("url", "https://www.floatplane.com/api/edges")
-'  m.video_task.observeField("response", "makeEdgeOptions")
-'  m.video_task.control = "RUN"
-'end sub
-
-'sub makeEdgeOptions(obj)
-'  'Display possible edge servers
-'  unparsed = obj.getData()
-'  info = ParseJSON(unparsed)
-'  m.ebuttons = createObject("roArray", 7, true)
-'  for each edge in info.edges
-'    m.ebuttons.Push(edge.hostname)
-'  end for
-
-'  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
-'  'm.top.getScene().dialog.title = "Edge CDN Servers"
-'  m.top.getScene().dialog.showCancel = false
-'  'm.top.getScene().dialog.text = "Select a server:"
-'  'm.top.getScene().dialog.buttons = m.ebuttons
-'  m.top.getScene().dialog.title = "Edge Selection Disabled"
-'  m.top.getScene().dialog.text = "Edge servers are currently not used -- Floatplane itself provides the CDN server to use."
-'  setupDialogPalette()
-'  m.top.getScene().dialog.observeField("buttonSelected","handleEdgeOptions")
-'end sub
-
-'sub handleEdgeOptions()
-  'Set the newely user-chosen edge server'
-  'edge = m.ebuttons[m.top.getScene().dialog.buttonSelected]
-  'registry = RegistryUtil()
-  'registry.write("edge", edge, "hydravion")
-  'edge = registry.read("edge", "hydravion")
-  '? "[Edge Server] User selected " + edge
-'  m.top.getScene().dialog.close = true
-'end sub
 
 sub handleOptions()
   'Determines which option was selected'
