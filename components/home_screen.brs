@@ -720,13 +720,10 @@ sub showDetailOptions()
   'Check for attachments
   buttons = createObject("roArray", 10, true)
   buttons.push("Select Resolution")
-  vids = m.selected_media.videoAttachments
-  auds = m.selected_media.audioAttachments
-  if vids <> Invalid
-    buttons.push("Video Attachments")
-  end if
-  if auds <> Invalid
-    buttons.push("Audio Attachments")
+  if m.selected_media.progress < m.selected_media.duration then
+    buttons.push("Mark Watched")
+  else
+    buttons.push("Mark Unwatched")
   end if
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Options"
@@ -740,13 +737,25 @@ end sub
 sub handleDetailOptions(obj)
   buttons = m.top.getScene().dialog.buttons
   selectedButton = m.top.getScene().dialog.buttonSelected
+  'Determine contentType 
+  contentType = "video"
+  if m.selected_media.isVideo = true then
+    contentType = "video"
+  else if m.selected_media.isAudio = true then
+    contentType = "audio"
+  end if
+
   if buttons[selectedButton] = "Select Resolution"
     'Select Resolution
     ? "IT"
-  else if buttons[selectedButton] = "Video Attachments"
-    'placeholder
-
-  else if buttons[selectedButton] = "Audio Attachments"
+  else if buttons[selectedButton] = "Mark Watched"
+    m.selected_media.progress = m.selected_media.duration
+    setProgress(contentType, m.selected_media.guid, m.selected_media.progress)
+    updateSelectedMediaProgressBar(m.selected_media.progress)
+  else if buttons[selectedButton] = "Mark Unwatched"
+    m.selected_media.progress = 1
+    setProgress(contentType, m.selected_media.guid, m.selected_media.progress)
+    updateSelectedMediaProgressBar(m.selected_media.progress)
   end if
 end sub
 
