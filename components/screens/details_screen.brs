@@ -1,7 +1,6 @@
 sub init()
   m.title = m.top.FindNode("title")
   m.date = m.top.FindNode("date")
-  'm.description = m.top.FindNode("description")
   m.layout_group = m.top.FindNode("layout_group")
   m.thumbnail = m.top.FindNode("thumbnail")
   m.postType = m.top.FindNode("postType")
@@ -9,6 +8,8 @@ sub init()
   m.resume_button = m.top.FindNode("resume_button")
   m.like_button = m.top.FindNode("like")
   m.dislike_button = m.top.FindNode("dislike")
+  m.description = m.top.FindNode("description")
+  m.attachmentsList = m.top.FindNode("attachmentsList")
   m.top.observeField("visible", "onVisibleChange")
   m.like_button.observeField("buttonSelected", "onLikeButtonPressed")
   m.dislike_button.observeField("buttonSelected", "onDislikeButtonPressed")
@@ -43,7 +44,7 @@ sub OnContentChange(obj)
   m.description.font = "font:MediumSystemFont"
   m.description.color = "0xFFFFFF"
   m.description.width = "1180"
-  m.description.height = "360"
+  m.description.height = "260"
   m.description.lineSpacing="4.0"
   m.description.translation="[50,200]"
   m.description.text = item.DESCRIPTION
@@ -69,6 +70,46 @@ sub OnContentChange(obj)
   if item.hasAudio = false AND item.hasVideo = false
     m.play_button.visible = false
   end if
+
+  'Get rid of attachments row if it shouldn't exist but... does?
+  if m.attachmentsList <> invalid
+    if item.hasVideo = false AND item.hasAudio = false then
+      m.layout_group.removeChild(m.attachmentsList)
+    end if
+  end if
+
+  'Add attachments to row
+  m.attachments = CreateObject("roSGNode", "ContentNode")
+  if item.hasVideo = true then
+    for each vid in item.videoAttachments
+      attachment = CreateObject("roSGNode", "media_node")
+      attachment.title = vid.title
+      attachment.id = vid.id
+      attachment.guid = vid.id
+      attachment.isVideo = true
+      attachment.isAudio = false
+      attachment.HDPOSTERURL = vid.thumbnail.path
+      m.attachments.appendChild(attachment)
+    end for
+  end if
+  if item.hasAudio = true then
+    for each aud in item.audioAttachments
+      attachment = CreateObject("roSGNode", "media_node")
+      attachment.title = aud.title
+      attachment.id = aud.id
+      attachment.guid = aud.id
+      attachment.isVideo = false
+      attachment.isAudio = true
+      attachment.HDPOSTERURL = "pkg:/images/sound-poster.png"
+      m.attachments.appendChild(attachment)
+    end for
+  end if
+
+  if m.attachmentsList <> invalid
+    m.layout_group.removeChild(m.attachmentsList)
+  end if
+  m.attachmentsList.content = m.attachments
+  m.layout_group.appendChild(m.attachmentsList)
 
   'Hide or show resume button based on progress
   m.resume_button.visible = false
@@ -138,6 +179,13 @@ sub OnContentChange(obj)
   end if
 end sub
 
+'sub onItemSelected()
+'  selected = m.attachmentsList.content.getChild(m.attachmentsList.itemSelected)
+'  'm.attachedMediaSelected = selected
+'  m.top.addField("attachedMediaSelected","node", true)
+'  m.top.setField("attachedMediaSelected", selected)
+'end sub
+
 sub onLikeButtonPressed()
   if m.like_button.opacity = 0.5
     m.likes += 1
@@ -185,7 +233,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
 
   if m.play_button.hasFocus()
     if key = "up"
-      m.description.setFocus(true)
+      if m.attachmentsList <> Invalid AND m.attachments.getChildCount() > 0 then
+        m.attachmentsList.setFocus(true)
+      else
+        m.description.setFocus(true)
+      end if
       return true
     else if key = "left"
       if m.dislike_button.focusable = true
@@ -202,7 +254,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
 
   if m.resume_button.hasFocus()
     if key = "up"
-      m.description.setFocus(true)
+      if m.attachmentsList <> Invalid AND m.attachments.getChildCount() > 0 then
+        m.attachmentsList.setFocus(true)
+      else
+        m.description.setFocus(true)
+      end if
       return true
     else if key = "left"
       m.play_button.setFocus(true)
@@ -221,7 +277,11 @@ function onKeyEvent(key as string, press as boolean) as boolean
       end if
       return true
     else if key = "up"
-      m.description.setFocus(true)
+      if m.attachmentsList <> Invalid AND m.attachments.getChildCount() > 0 then
+        m.attachmentsList.setFocus(true)
+      else
+        m.description.setFocus(true)
+      end if
       return true
     end if
   end if
@@ -231,17 +291,26 @@ function onKeyEvent(key as string, press as boolean) as boolean
       m.dislike_button.setFocus(true)
       return true
     else if key = "up"
-      m.description.setFocus(true)
+      if m.attachmentsList <> Invalid AND m.attachments.getChildCount() > 0 then
+        ? "attachmentList found"
+        m.attachmentsList.setFocus(true)
+      else
+        m.description.setFocus(true)
+      end if
       return true
     end if
   end if
 
   if m.description.hasFocus()
     if key = "down"
-      if m.play_button.focusable = true then
-        m.play_button.setFocus(true)
+      if m.attachmentsList <> Invalid AND m.attachments.getChildCount() > 0 then
+        m.attachmentsList.setFocus(true)
       else
-        m.like_button.setFocus(true)
+        if m.play_button.focusable = true then
+          m.play_button.setFocus(true)
+        else
+          m.like_button.setFocus(true)
+        end if
       end if
       return true
     else if key = "back" or key = "left" or key = "right"
@@ -252,6 +321,25 @@ function onKeyEvent(key as string, press as boolean) as boolean
       end if
       return true
     end if
+  end if
+
+  if m.attachmentsList.hasFocus()
+    if key = "up"
+      m.description.setFocus(true)
+    else if key = "down"
+      if m.play_button.focusable = true then
+        m.play_button.setFocus(true)
+      else
+        m.like_button.setFocus(true)
+      end if
+    else if key = "back"
+      if m.play_button.focusable = true then
+        m.play_button.setFocus(true)
+      else
+        m.like_button.setFocus(true)
+      end if
+    end if
+    return true
   end if
 
   return false

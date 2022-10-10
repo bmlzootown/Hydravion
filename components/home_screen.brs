@@ -19,6 +19,7 @@ function init()
   m.content_screen.observeField("itemIndex", "onItemFocus")
   m.details_screen.observeField("play_button_pressed", "onPlayButtonPressed")
   m.details_screen.observeField("resume_button_pressed", "onResumeButtonPressed")
+  m.details_screen.observeField("attachedMediaSelected", "onAttachedMediaSelected")
   m.resume = false
   m.streamCheckTimer.observeField("fire","checkStream")
 
@@ -273,13 +274,16 @@ end sub
 sub onPostInfo(obj)
   info = ParseJSON(obj.getData())
   m.selected_media.userInteraction = info.userInteraction
+  m.selected_media.videoAttachments = info.videoAttachments
+  m.selected_media.audioAttachments = info.audioAttachments
+  m.selected_media.pictureAttachments = info.pictureAttachments
   '? m.selected_media
 
   if m.selected_media.hasVideo = true
     m.selected_task = CreateObject("roSGNode", "urlTask")
     '? m.selected_media.guid
     '? m.selected_media.videoAttachments
-    url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.videoAttachments[0]
+    url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.videoAttachments[0].id
     m.selected_task.setField("url", url)
     m.selected_task.observeField("response", "onVideoSelectedSetup")
     m.selected_task.control = "RUN"
@@ -436,6 +440,39 @@ sub onResumeButtonPressed(obj)
   end if
 end sub
 
+sub onAttachedMediaSelected(obj)
+  m.attached_media = m.details_screen.findNode("attachmentsList").content.getChild(obj.getData())
+
+  attachmentTask = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.attached_media.guid
+  attachmentTask.setField("url", url)
+  attachmentTask.observeField("response", "onProcessAttachedMedia")
+  attachmentTask.control = "RUN"
+end sub
+
+sub onProcessAttachedMedia(obj)
+  info = ParseJSON(obj.getData())
+  cdn = info.groups[0].origins[0].url
+  uri = info.groups[0].variants[0].url
+  m.selected_media = m.attached_media
+  m.selected_media.url = cdn + uri
+
+  m.videoplayer.content = m.selected_media
+  if m.selected_media.isVideo = true
+    m.playButtonPressed = true
+    onProcessVideoSelected(obj)
+  else if m.selected_media.isAudio = true
+    m.details_screen.visible = false
+    m.details_screen.setFocus(false)
+    m.videoplayer.visible = true
+    m.videoplayer.setFocus(true)
+    m.videoplayer.control = "play"
+    if m.video_task <> invalid
+      m.playButtonPressed = true
+    end if
+  end if
+end sub
+
 sub onPlayButtonPressed(obj)
   if m.live then
     doLive()
@@ -538,12 +575,12 @@ sub onPlayVideo(obj)
   m.videoplayer.control = "play"
 end sub
 
-sub setVideoProgress(guid as String, position as Integer)
+sub setProgress(contentType as String, guid as String, position as Integer)
   videoProgress = CreateObject("roSGNode", "postTask")
   url = "https://www.floatplane.com/api/v3/content/progress"
   data = {
     "id": guid,
-    "contentType": "video",
+    "contentType": contentType,
     "progress": position
   }
   videoProgress.setField("url", url)
@@ -596,7 +633,13 @@ sub onPlayerStateChanged(obj)
     if m.selected_media.id <> "live"
       if m.playerPosition <> Invalid
         'Update progress, then update progressBar by refreshing individual video node
-        setVideoProgress(m.selected_media.guid, m.playerPosition)
+        contentType = "video"
+        if m.selected_media.isVideo = true then
+          contentType = "video"
+        else if m.selected_media.isAudio = true then
+          contentType = "audio"
+        end if
+        setProgress(contentType, m.selected_media.guid, m.playerPosition)
         updateSelectedMediaProgressBar(m.playerPosition)
       end if
     end if
@@ -605,7 +648,11 @@ sub onPlayerStateChanged(obj)
     'Close video player when finished player
       if m.selected_media.id <> "live"
         'Update progress, then update progressBar by refreshing individual video node
-        setVideoProgress(m.selected_media.guid, m.selected_media.duration + 1)
+        contentType = "video"
+        if m.selected_media.isAudio = true then
+          contentType = "audio"
+        end if
+        setProgress(contentType, m.selected_media.guid, m.selected_media.duration + 1)
         updateSelectedMediaProgressBar(m.selected_media.duration + 1)
       end if
       closeVideo()
@@ -670,15 +717,49 @@ sub showMainOptions()
 end sub
 
 sub showDetailOptions()
+  'Check for attachments
+  buttons = createObject("roArray", 10, true)
+  buttons.push("Select Resolution")
+  vids = m.selected_media.videoAttachments
+  auds = m.selected_media.audioAttachments
+  if vids <> Invalid
+    buttons.push("Video Attachments")
+  end if
+  if auds <> Invalid
+    buttons.push("Audio Attachments")
+  end if
+  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
+  m.top.getScene().dialog.title = "Options"
+  m.top.getScene().dialog.showCancel = false
+  m.top.getScene().dialog.text = "Select Option"
+  m.top.getScene().dialog.buttons = buttons
+  setupDialogPalette()
+  m.top.getScene().dialog.observeField("buttonSelected","handleDetailOptions")
+end sub
+
+sub handleDetailOptions(obj)
+  buttons = m.top.getScene().dialog.buttons
+  selectedButton = m.top.getScene().dialog.buttonSelected
+  if buttons[selectedButton] = "Select Resolution"
+    'Select Resolution
+    ? "IT"
+  else if buttons[selectedButton] = "Video Attachments"
+    'placeholder
+
+  else if buttons[selectedButton] = "Audio Attachments"
+  end if
+end sub
+
+sub makeResolutionsOptions()
   'Grab resolutions available for the video
   m.res_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid
   m.res_task.setField("url", url)
-  m.res_task.observeField("response", "makeDetailOptions")
+  m.res_task.observeField("response", "showResolutionsOptions")
   m.res_task.control = "RUN"
 end sub
 
-sub makeDetailOptions(obj)
+sub showResolutionsOptions(obj)
   'Display available resolutions for selected video
   info = ParseJSON(obj.getData())
   m.dbuttons = createObject("roArray", 10, true)
@@ -692,11 +773,11 @@ sub makeDetailOptions(obj)
   m.top.getScene().dialog.showCancel = false
   m.top.getScene().dialog.text = "Select Stream Resolution"
   m.top.getScene().dialog.buttons = m.dbuttons
-  m.top.getScene().dialog.observeField("buttonSelected","handleDetailOptions")
+  m.top.getScene().dialog.observeField("buttonSelected","handleResolutionsOptions")
   setupDialogPalette()
 end sub
 
-sub handleDetailOptions()
+sub handleResolutionsOptions()
   url = ""
   m.video_task = CreateObject("roSGNode", "urlTask")
   m.resolution = m.dbuttons[m.top.getScene().dialog.buttonSelected]
