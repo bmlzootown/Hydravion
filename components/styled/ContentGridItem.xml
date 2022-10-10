@@ -38,6 +38,7 @@
       m.itembackground = m.top.findNode("itemBackground")
       m.posttype = m.top.findNode("postType")
       m.postduration = m.top.findNode("postDuration")
+      m.progressbar = m.top.findNode("progressBar")
     end sub
     sub showContent()
       itemcontent = m.top.itemContent
@@ -50,6 +51,20 @@
       else if m.itemtitle.text = "backpage"
         'm.itembackground.visible = false
         m.itemtitle.text = "Back"
+      end if
+      'Setup progressBar, 100% = 390
+      dur = itemcontent.duration
+      progress = itemcontent.progress
+      if dur <> Invalid AND progress <> Invalid then
+        if dur <> 0 then
+          if progress >= dur then
+            m.progressbar.width = 389.5
+          else
+            m.progressbar.width = (progress/dur)*389.5
+          end if
+        end if
+      else
+        m.progressbar.width = 0
       end if
     end sub
     sub onItemFocus()
@@ -74,27 +89,33 @@
       loadHeight = "219"
       scaleRotateCenter = "[ 256.0, 144.0 ]" />
     <Rectangle
-        id="itemBackground"
-        color="0x11111100"
-        width="390"
-        height="55"
-        translation="[0,219]">
-        <ScrollingLabel 
-            id="itemTitle"
-            maxWidth="382"
-            repeatCount="0"
-            font="font:SmallestBoldSystemFont"
-            translation = "[ 4, 5 ]" />
-        <Label
-            id="postType"
-            font="font:SmallestSystemFont"
-            translation="[ 4, 30 ]"/>
-        <Label
-            id="postDuration"
-            font="font:SmallestSystemFont"
-            horizAlign="right"
-            width="100"
-            translation="[ 290, 30 ]"/>  
+		  id="progressBar"
+      translation = "[ 0.5, 220 ]" 
+		  color="0x00AFEC" 
+      width = "0"
+      height = "4" />
+    <Rectangle
+      id="itemBackground"
+      color="0x11111100"
+      width="390"
+      height="55"
+      translation="[0,226]">
+      <ScrollingLabel 
+        id="itemTitle"
+        maxWidth="382"
+        repeatCount="0"
+        font="font:SmallestBoldSystemFont"
+        translation = "[ 4, 5 ]" />
+      <Label
+        id="postType"
+        font="font:SmallestSystemFont"
+        translation="[ 4, 30 ]"/>
+      <Label
+        id="postDuration"
+        font="font:SmallestSystemFont"
+        horizAlign="right"
+        width="100"
+        translation="[ 290, 30 ]"/>  
     </Rectangle>
   </children>
 </component>

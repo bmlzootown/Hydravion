@@ -14,5 +14,7 @@
     <field id="postType" type="string" />
     <field id="postId" type="string" />
     <field id="postDuration" type="string" />
+    <field id="progress" type="integer" />
+    <field id="duration" type="integer" />
   </interface>
 </component>

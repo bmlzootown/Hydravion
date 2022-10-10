@@ -18,6 +18,8 @@ function init()
   m.content_screen.observeField("content_selected", "onContentSelected")
   m.content_screen.observeField("itemIndex", "onItemFocus")
   m.details_screen.observeField("play_button_pressed", "onPlayButtonPressed")
+  m.details_screen.observeField("resume_button_pressed", "onResumeButtonPressed")
+  m.resume = false
   m.streamCheckTimer.observeField("fire","checkStream")
 
   m.itemFocus = 0
@@ -66,52 +68,7 @@ sub onNext(obj)
 
   showUpdateDialog()
 
-  registry = RegistryUtil()
-  if type(obj) <> "String"
-    'Get Edge Servers
-    'm.edge_task = CreateObject("roSGNode", "edgesUrlTask")
-    'm.edge_task.observeField("response", "onEdges")
-    'edges = "https://www.floatplane.com/api/edges"
-    'm.edge_task.setField("url", edges)
-    'm.edge_task.control = "RUN"
-    registry.write("edge", "edge03-na.floatplane.com", "hydravion")
-    getSubs("")
-  else
-  ''  if registry.read("edge", "hydravion") = invalid then
-  ''    registry.write("edge", "Edge03-na.floatplane.com", "hydravion")
-  ''  end if
-    getSubs("")
-  end if
-  if registry.read("edge", "hydravion") = invalid then
-    registry.write("edge", "edge03-na.floatplane.com", "hydravion")
-  end if
-end sub
-
-sub onEdges(obj)
-  'Find best edge server
-  m.edges = obj.getData()
-  m.best_edge = CreateObject("roSGNode", "edgesTask")
-  m.best_edge.observeField("bestEdge", "bestEdge")
-  m.best_edge.setField("edges", obj.getData())
-  m.best_edge.control = "RUN"
-end sub
-
-sub bestEdge(obj)
-  'Got best edge, set best edge
-  registry = RegistryUtil()
-  edge = obj.getData()
-  if edge = "" then
-    'Edge didn't return, so let's just use the default
-    registry.write("edge", m.default_edge, "hydravion")
-  else if edge.Instr(m.default_edge) > -1 then
-    'Edge found, not default, so let's use it
-    registry.write("edge", m.default_edge, "hydravion")
-  else
-    'In case something else happens, just use the default
-    registry.write("edge", edge, "hydravion")
-  end if
-  'Get subs
-  getSubs(obj)
+  getSubs("")
 end sub
 
 sub getSubs(obj)
@@ -150,7 +107,7 @@ sub onCategorySelected(obj)
 
   'Grab stream info
   m.stream_cdn = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/cdn/delivery?type=live&creator=" + item.creatorGUID
+  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=live&entityId=" + item.liveInfo.id
   m.stream_cdn.setField("url", url)
   m.stream_cdn.observeField("response", "onGetStreamURL")
   m.stream_cdn.observeField("error", "onGotStreamError")
@@ -163,16 +120,9 @@ end sub
 
 sub onGetStreamURL(obj)
   json = ParseJSON(obj.getData())
-  cdn = json.cdn
-  uri = json.resource.uri
-  'if json.resource.data <> invalid
-  '  regexObj = CreateObject("roRegex", "\{(.*?)\}", "i")
-  '  regUri = regexObj.matchAll(uri)
-  '  for i = 0 to regUri.Count() - 1
-  '    data = json.resource.data[regUri[i][1]]
-  '    uri = strReplace(uri, regUri[i][0], data)
-  '  end for
-  'end if
+
+  cdn = json.groups[0].origins[0].url
+  uri = json.groups[0].variants[0].url
   m.streamUri = cdn + uri
 
   m.stream_info = CreateObject("roSGNode", "urlTask")
@@ -344,8 +294,7 @@ end sub
 
 sub onVideoSelectedSetup(obj)
   'Got available resolutions for selected video
-  unparsed = obj.getData()
-  info = ParseJSON(unparsed)
+  info = ParseJSON(obj.getData())
 
   resolutions = createObject("roArray", 10, true)
   twentyonesixty = false
@@ -383,48 +332,71 @@ sub onVideoSelectedSetup(obj)
   'Fix video descriptions
   m.selected_media.description = info.description
 
+  'Fix video duration
+  m.selected_media.duration = info.duration
+
   'Print selected media node for debug
+  '? m.selected_media
+
+  getProgress = CreateObject("roSGNode", "postTask")
+  url = "https://www.floatplane.com/api/v3/content/get/progress"
+  data = {
+    "ids":[m.selected_media.guid],
+    "contentType": "video"
+  }
+  getProgress.setField("url", url)
+  getProgress.setField("body", data)
+  getProgress.observeField("response", "gotProgress")
+  getProgress.control = "RUN"
+end sub
+
+sub gotProgress(obj)
+  progress = ParseJson(obj.getData())
+  if progress[0] <> Invalid
+    m.selected_media.progress = progress[0].progress
+  end if
+
   ? m.selected_media
 
-
   m.video_pre_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v2/cdn/delivery?type=vod&guid=" + m.selected_media.guid
+  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid
   m.video_pre_task.setField("url", url)
   m.video_pre_task.observeField("response", "onProcessVideoSelected")
   m.video_pre_task.control = "RUN"
 end sub
 
 sub onProcessVideoSelected(obj)
-  unparsed = obj.getData()
-  info = ParseJSON(unparsed)
-  m.selected_media.url = info.cdn + info.resource.uri
+  info = ParseJSON(obj.getData())
   m.info = info
   if m.resolution = invalid then
-    m.resolution = "1080"
+    m.resolution = "1080p"
   end if
 
-  'Replace qualityLevels
-  regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevelParams.2})", "i")
-  regUri = regexObj.match(m.selected_media.url)
-  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], m.resolution + ".mp4")
+  'm.selected_media.url = info.cdn + info.resource.uri
+  variants = info.groups[0].variants
+  cdn = info.groups[0].origins[0].url
+  uri = ""
 
-  'Replace qualityLevelsParams.token
-  regexObj = CreateObject("roRegex", "{qualityLevelParams.4}", "i")
-  regUri = regexObj.match(m.selected_media.url)
-  resolutions = info.resource.data.qualityLevelParams
-  resName = ""
-  for each r in info.resource.data.qualityLevels
-    if r.label.Instr(m.resolution) > -1 then
-      resName = r.name
-    else
-      'TODO -- Notify user that default quality wasn't found?
-      key = resolutions.Keys().Peek()
-      resName = key
+  for i = 0 to (variants.Count()-1)
+    variant = variants[i]
+    if variant.enabled = false then
+      variants.Delete(i)
     end if
   end for
-  res = resolutions.Lookup(resName)
-  m.selected_media.url = strReplace(m.selected_media.url, regUri[0], res["4"])
 
+  for each variant in variants
+    if variant.label.Instr(m.resolution) <> -1 then
+      uri = variant.url
+    end if
+  end for
+
+  if uri = "" then
+    uri = variants.Peek().url
+  end if
+
+  m.selected_media.url = cdn + uri
+
+  ? "DEFAULT RESOLUTION: " + m.resolution
   if m.playButtonPressed
     'We are just going to pass it some info... No need, really, but I will fix this later
     onPlayVideo(info)
@@ -457,10 +429,23 @@ sub onPreBuffer(obj)
   m.details_screen.setFocus(true)
 end sub
 
+sub onResumeButtonPressed(obj)
+  if m.live = false then
+    m.resume = true
+    onPlayButtonPressed(obj)
+  end if
+end sub
+
 sub onPlayButtonPressed(obj)
   if m.live then
     doLive()
   else
+    if m.resume then
+      m.videoplayer.content.PlayStart = m.videoplayer.content.progress
+    else
+      m.videoplayer.content.PlayStart = 0
+    end if
+    m.resume = false
     'Prebuffering currently DISABLED
     'Video is already prebuffered, we just need to hide the detail screen, focus on the video player, and play the video
     m.details_screen.visible = false
@@ -485,12 +470,14 @@ sub doLive()
     url = streamInfo.guid
     if url.Instr("floatplane") > -1 then
       loadLiveFloat(url)
-      else
+    else
       m.live_task = createObject("roSGNode", "liveTask")
       m.live_task.setField("url", url)
       m.live_task.observeField("done", "loadLiveStuff")
       m.live_task.control = "RUN"
     end if
+  else 
+    showMessageDialog("insufficientSubscriptionLevelError", "You do not have the necessary subscription to access this stream.")
   end if
 end sub
 
@@ -499,7 +486,9 @@ sub loadLiveFloat(obj)
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = obj
   videoContent.StreamFormat = "hls"
-  videoContent.PlayStart = 999999999
+  time = CreateObject("roDateTime")
+  now = time.AsSeconds()
+  videoContent.PlayStart = now + 9000
   videoContent.live = true
 
   m.content_screen.visible = false
@@ -507,6 +496,7 @@ sub loadLiveFloat(obj)
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
+  m.videoplayer.seek = m.videoplayer.pauseBufferEnd
 end sub
 
 sub loadLiveStuff(obj)
@@ -514,7 +504,9 @@ sub loadLiveStuff(obj)
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = "tmp:/live.m3u8"
   videoContent.StreamFormat = "hls"
-  videoContent.PlayStart = 999999999
+  time = CreateObject("roDateTime")
+  now = time.AsSeconds()
+  videoContent.PlayStart = now + 9000
   videoContent.live = true
 
   m.content_screen.visible = false
@@ -522,23 +514,21 @@ sub loadLiveStuff(obj)
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
+  m.videoplayer.seek = m.videoplayer.pauseBufferEnd
 end sub
 
 sub onPlayVideo(obj)
   ? "TITLE: " + m.selected_media.ShortDescriptionLine1
   if m.resolution <> invalid then
     ? "RESOLUTION SELECTED: " + m.resolution
-    ourl =  m.info.cdn + m.info.resource.uri
-    'Replace qualityLevels
-    regexObj = CreateObject("roRegex", "(?<=\/)({qualityLevels})(?=[.]mp4\/)", "i")
-    regUri = regexObj.match(ourl)
-    m.selected_media.url = strReplace(ourl, regUri[0], m.resolution)
-
-    'Replace qualityLevelsParams.token
-    regexObj = CreateObject("roRegex", "{qualityLevelParams.token}", "i")
-    regUri = regexObj.match(m.selected_media.url)
-    resolutions = m.info.resource.data.qualityLevelParams
-    m.selected_media.url = strReplace(m.selected_media.url, regUri[0], resolutions.Lookup(m.resolution).token)
+    cdn = m.info.groups[0].origins[0].url
+    uri = ""
+    for each variant in m.info.groups[0].variants
+      if variant.label.Instr(m.resolution) <> -1 then
+        uri = variant.url
+      end if
+    end for
+    m.selected_media.url = cdn + uri
   end if
 
   m.details_screen.visible = false
@@ -546,7 +536,35 @@ sub onPlayVideo(obj)
   m.videoplayer.setFocus(true)
   m.videoplayer.content = m.selected_media
   m.videoplayer.control = "play"
+end sub
 
+sub setVideoProgress(guid as String, position as Integer)
+  videoProgress = CreateObject("roSGNode", "postTask")
+  url = "https://www.floatplane.com/api/v3/content/progress"
+  data = {
+    "id": guid,
+    "contentType": "video",
+    "progress": position
+  }
+  videoProgress.setField("url", url)
+  videoProgress.setField("body", data)
+  videoProgress.observeField("response", "didSetProgress")
+  videoProgress.observeField("error", "didntSetProgress")
+  videoProgress.control = "RUN"
+end sub
+
+sub didSetProgress(res)
+  ? res.getData()
+end sub
+
+sub didntSetProgress(err)
+  ? err.getData()
+end sub
+
+sub updateSelectedMediaProgressBar(position as Integer)
+  m.selected_media.progress = position
+  grid = m.content_screen.FindNode("content_grid")
+  grid.replaceChild(m.selected_media, m.selected_index)
 end sub
 
 sub initializeVideoPlayer()
@@ -567,14 +585,31 @@ end sub
 
 sub onPlayerPositionChanged(obj)
   ? "Position: ", obj.getData()
+  m.playerPosition = obj.getData()
 end sub
 
 sub onPlayerStateChanged(obj)
   ? "State: ", obj.getData()
   state = obj.getData()
+  if state = "stopped"
+    closeVideo()
+    if m.selected_media.id <> "live"
+      if m.playerPosition <> Invalid
+        'Update progress, then update progressBar by refreshing individual video node
+        setVideoProgress(m.selected_media.guid, m.playerPosition)
+        updateSelectedMediaProgressBar(m.playerPosition)
+      end if
+    end if
+  end if
   if state = "finished"
     'Close video player when finished player
-    closeVideo()
+      if m.selected_media.id <> "live"
+        'Update progress, then update progressBar by refreshing individual video node
+        setVideoProgress(m.selected_media.guid, m.selected_media.duration + 1)
+        updateSelectedMediaProgressBar(m.selected_media.duration + 1)
+      end if
+      closeVideo()
+      m.content_screen.setFocus(true)
   else if state = "error"
     'Video couldn't play
     '-1 HTTP error: malformed headers or HTTP error result
@@ -629,7 +664,7 @@ sub showMainOptions()
   m.top.getScene().dialog.title = "Options"
   m.top.getScene().dialog.showCancel = false
   m.top.getScene().dialog.text = "Select Option"
-  m.top.getScene().dialog.buttons = ["Change Server","Logout"]
+  m.top.getScene().dialog.buttons = ["Logout"]
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","handleMainOptions")
 end sub
@@ -637,7 +672,7 @@ end sub
 sub showDetailOptions()
   'Grab resolutions available for the video
   m.res_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.guid
+  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid
   m.res_task.setField("url", url)
   m.res_task.observeField("response", "makeDetailOptions")
   m.res_task.control = "RUN"
@@ -645,11 +680,12 @@ end sub
 
 sub makeDetailOptions(obj)
   'Display available resolutions for selected video
-  unparsed = obj.getData()
-  info = ParseJSON(unparsed)
+  info = ParseJSON(obj.getData())
   m.dbuttons = createObject("roArray", 10, true)
-  for each level in info.levels
-    m.dbuttons.Push(level.name)
+  for each variant in info.groups[0].variants
+    if variant.enabled = true then
+      m.dbuttons.Push(variant.label)
+    end if
   end for
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Resolution"
@@ -673,49 +709,11 @@ end sub
 sub handleMainOptions()
   'Determines which option was selected on main screen'
   if m.top.getScene().dialog.buttonSelected = 0
-    getEdgeOptions()
-  else if m.top.getScene().dialog.buttonSelected = 1
+    'getEdgeOptions()
     showLogoutDialog()
+  else if m.top.getScene().dialog.buttonSelected = 1
+    'showLogoutDialog()
   end if
-end sub
-
-sub getEdgeOptions()
-  'Gets list of all edge servers'
-  m.video_task = CreateObject("roSGNode", "urlTask")
-  m.top.getScene().dialog.close = true
-  m.video_task.setField("url", "https://www.floatplane.com/api/edges")
-  m.video_task.observeField("response", "makeEdgeOptions")
-  m.video_task.control = "RUN"
-end sub
-
-sub makeEdgeOptions(obj)
-  'Display possible edge servers
-  unparsed = obj.getData()
-  info = ParseJSON(unparsed)
-  m.ebuttons = createObject("roArray", 7, true)
-  for each edge in info.edges
-    m.ebuttons.Push(edge.hostname)
-  end for
-
-  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
-  'm.top.getScene().dialog.title = "Edge CDN Servers"
-  m.top.getScene().dialog.showCancel = false
-  'm.top.getScene().dialog.text = "Select a server:"
-  'm.top.getScene().dialog.buttons = m.ebuttons
-  m.top.getScene().dialog.title = "Edge Selection Disabled"
-  m.top.getScene().dialog.text = "Edge servers are currently not used -- Floatplane itself provides the CDN server to use."
-  setupDialogPalette()
-  m.top.getScene().dialog.observeField("buttonSelected","handleEdgeOptions")
-end sub
-
-sub handleEdgeOptions()
-  'Set the newely user-chosen edge server'
-  'edge = m.ebuttons[m.top.getScene().dialog.buttonSelected]
-  'registry = RegistryUtil()
-  'registry.write("edge", edge, "hydravion")
-  'edge = registry.read("edge", "hydravion")
-  '? "[Edge Server] User selected " + edge
-  m.top.getScene().dialog.close = true
 end sub
 
 sub handleOptions()
@@ -743,6 +741,19 @@ sub showLiveDialog()
   m.top.getScene().dialog.text = "Press OK to play stream"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","doLive")
+end sub
+
+sub showMessageDialog(title, message)
+  m.top.getScene().dialog = CreateObject("roSGNode", "SimpleDialog")
+  m.top.getScene().dialog.title = title
+  m.top.getScene().dialog.showCancel = false
+  m.top.getScene().dialog.text = message
+  setupDialogPalette()
+  m.top.getScene().dialog.observeField("buttonSelected","closeDialog")
+end sub
+
+sub closeDialog()
+  m.top.getScene().dialog.close = true
 end sub
 
 sub doLogout()
@@ -780,7 +791,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "-Updated channel UI" + Chr(10) + "-Updated channel icon/splash" + Chr(10) + "-Added likes/dislikes" + Chr(10) + "-Fix playback on older non-1080 devices" + Chr(10) + "-Removed (some) deprecated code"
+  m.top.getScene().dialog.text = "-Added progress bar" + Chr(10) + "-Added resume feature" + Chr(10) + "-Implemented syncing of video progress with FP API"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub

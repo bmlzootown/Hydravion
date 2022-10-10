@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="postTask" extends="task" >
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+    <interface>
+      <field id="url" type="string" />
+      <field id="body" type="assocarray" />
+      <field id="response" type="string" />
+      <field id="error" type="string" />
+    </interface>
+    <script type="text/brightscript" uri="pkg:/components/postTask.brs" />
+</component>

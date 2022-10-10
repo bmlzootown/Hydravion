@@ -27,6 +27,7 @@ function request()
     node.title = creator.title
     node.feed_url = "https://www.floatplane.com/api/v3/content/creator?id=" + subscription.creator
     node.creatorGUID = subscription.creator
+    node.liveInfo = creator.liveStream
     node.icon = loadCacheImage(creator.icon.path)
     'Grab sub icon
     node.HDPosterURL = loadCacheImage(creator.cover.childImages[0].path)
@@ -61,7 +62,7 @@ function getImageUrl(creator) as String
   xfer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
   xfer.AddHeader("Cookie", cookies)
   xfer.initClientCertificates()
-  xfer.SetUrl("https://www.floatplane.com/api/creator/info?creatorGUID=" + creator)
+  xfer.SetUrl("https://www.floatplane.com/api/v3/creator/info?id=" + creator)
   subInfo = ParseJSON(xfer.GetToString())
 
   if subInfo[0].cover.childImages[0].path <> invalid

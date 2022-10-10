@@ -10,6 +10,10 @@
 		    type="int"
 		    alwaysnotify="true"
 		    alias="play_button.buttonSelected" />
+		<field id="resume_button_pressed" 
+			type="int"
+			alwaysnotify="true"
+			alias="resume_button.buttonSelected" />
 	</interface>
 	<script type="text/brightscript" uri="pkg:/components/screens/details_screen.brs" />
 	<children>
@@ -92,13 +96,13 @@
 						focusedIconUri="pkg:/images/like.png"
         				translation="[180, 600]"/>
 					<Button
-					id="dislike"
-					height="60"
-					minWidth="150"
-					maxWidth="200"
-					iconUri="pkg:/images/dislike.png"
-					focusedIconUri="pkg:/images/dislike.png"
-        			translation="[300, 600]"/>
+						id="dislike"
+						height="60"
+						minWidth="150"
+						maxWidth="200"
+						iconUri="pkg:/images/dislike.png"
+						focusedIconUri="pkg:/images/dislike.png"
+        				translation="[300, 600]"/>
 				</LayoutGroup>
 			<Button
         		id="play_button"
@@ -106,6 +110,15 @@
 				height="60"
 				minWidth="160"
 				maxWidth="160"
+				iconUri="pkg:/images/play.png"
+				focusedIconUri="pkg:/images/play.png"
+        		translation="[560, 600]" />
+			<Button
+        		id="resume_button"
+        		text="RESUME"
+				height="60"
+				minWidth="160"
+				maxWidth="200"
 				iconUri="pkg:/images/play.png"
 				focusedIconUri="pkg:/images/play.png"
         		translation="[560, 600]" />
