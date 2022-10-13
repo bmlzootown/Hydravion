@@ -130,8 +130,8 @@ sub OnContentChange(obj)
       m.resume_button.setFocus(true)
     else
       m.play_button.text = "PLAY"
-      m.play_button.maxWidth = 160
-      m.play_button.minWidth = 160
+      m.play_button.maxWidth = 170
+      m.play_button.minWidth = 170
       m.play_button.iconUri="pkg:/images/play.png"
       m.play_button.focusedIconUri="pkg:/images/play.png"
       m.resume_button.maxWidth = 0

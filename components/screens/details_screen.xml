@@ -121,8 +121,8 @@
         		id="play_button"
         		text="PLAY"
 				height="60"
-				minWidth="160"
-				maxWidth="160"
+				minWidth="170"
+				maxWidth="170"
 				iconUri="pkg:/images/play.png"
 				focusedIconUri="pkg:/images/play.png"
         		translation="[560, 600]" />
