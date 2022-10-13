@@ -4,6 +4,8 @@
     <field id="hasVideo" type="boolean" />
     <field id="hasAudio" type="boolean" />
     <field id="hasPicture" type="boolean" />
+    <field id="isVideo" type="boolean" />
+    <field id="isAudio" type="boolean" />
     <field id="attachments" type="roArray" />
     <field id="videoAttachments" type="roArray" />
     <field id="audioAttachments" type="roArray" />

@@ -14,6 +14,9 @@
 			type="int"
 			alwaysnotify="true"
 			alias="resume_button.buttonSelected" />
+		<field id="attachedMediaSelected"
+        	type="node"
+        	alias="attachmentsList.itemSelected" />
 	</interface>
 	<script type="text/brightscript" uri="pkg:/components/screens/details_screen.brs" />
 	<children>
@@ -41,7 +44,8 @@
 		<LayoutGroup 
 			id="layout_group"
 			translation="[50.0, 50.0]" 
-			itemSpacings="[16]">
+			itemSpacings="[10]"
+			horizAlignment="center">
 			<Label
         		id="title"
         		font="font:LargeBoldSystemFont"
@@ -68,7 +72,7 @@
 	    		text=""
 				horizAlign="center"
 	    		translation="[50,160]" />
-    		<!--<ScrollableText
+    		<ScrollableText
         		id="description"
         		font="font:MediumSystemFont"
         		color="0xFFFFFF"
@@ -76,7 +80,16 @@
 				height="360"
         		text=""
 				lineSpacing="4.0"
-        		translation="[50,200]" />-->
+        		translation="[50,200]" />
+			<MarkupGrid 
+          		id = "attachmentsList" 
+          		itemComponentName = "AttachmentItem" 
+          		numColumns = "5" 
+          		numRows = "1" 
+          		itemSize = "[ 200, 100 ]" 
+          		itemSpacing = "[ 40, 0 ]" 
+          		vertFocusAnimationStyle="fixedFocus"
+          		drawFocusFeedback = "true" />
     	</LayoutGroup>
 		<LayoutGroup
 			id="buttons"

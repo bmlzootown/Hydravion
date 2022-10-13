@@ -1,0 +1,69 @@
+<?xml version = "1.0" encoding = "utf-8" ?>
+ 
+<component name = "AttachmentItem" extends = "Group" >
+ 
+  <interface > 
+    <field id = "itemContent" type = "node" onChange = "showcontent"/>
+    <field id = "focusPercent" type = "float" onChange = "showfocus"/> 
+    <field id = "rowFocusPercent" type = "float" onChange = "showrowfocus"/>
+  </interface>
+ 
+  <script type = "text/brightscript" >
+
+    <![CDATA[
+
+    sub init()
+      m.itemposter = m.top.findNode("itemPoster") 
+      m.itemmask = m.top.findNode("itemMask")
+      m.itemlabel = m.top.findNode("itemLabel")
+    end sub
+
+    sub showcontent()
+      itemcontent = m.top.itemContent
+      m.itemposter.uri = itemcontent.HDPosterUrl
+      m.itemlabel.text = itemcontent.title
+      m.itemlabel.font.size = 15
+    end sub
+
+    sub showfocus()
+      'scale = 1 + (m.top.focusPercent * 0.08)
+      'm.itemposter.scale = [scale, scale]
+    end sub
+
+    sub showrowfocus()
+      'm.itemmask.opacity = 0.75 - (m.top.rowFocusPercent * 0.75)
+      'm.itemlabel.opacity = m.top.rowFocusPercent
+    end sub
+
+    ]]>
+
+  </script>
+
+  <children >
+
+    <Poster 
+      id = "itemPoster" 
+      translation = "[ 0, 0 ]" 
+      loadDisplayMode = "scaleToFit"
+      width = "200" 
+      height = "72" 
+      loadWidth="128"
+      loadHeight = "72"
+      scaleRotateCenter = "[ 256.0, 144.0 ]" >
+      <Rectangle 
+        id = "itemMask" 
+        color = "0x000000FF" 
+        opacity = "0.40" 
+        width = "201" 
+        height = "73" 
+        scaleRotateCenter = "[ 256.0, 144.0 ]"/>
+    </Poster>
+    <Label 
+      id = "itemLabel" 
+      translation = "[ 0, 80]" 
+      horizAlign = "center" 
+      width = "200" />
+
+  </children>
+
+</component>
