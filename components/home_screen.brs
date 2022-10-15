@@ -630,7 +630,7 @@ sub onPlayerStateChanged(obj)
   state = obj.getData()
   if state = "stopped"
     closeVideo()
-    if m.selected_media.id <> "live"
+    if m.selected_media <> Invalid AND m.selected_media.id <> "live"
       if m.playerPosition <> Invalid
         'Update progress, then update progressBar by refreshing individual video node
         contentType = "video"
@@ -646,7 +646,8 @@ sub onPlayerStateChanged(obj)
   end if
   if state = "finished"
     'Close video player when finished player
-      if m.selected_media.id <> "live"
+      ? m.selected_media
+      if m.selected_media <> Invalid AND m.selected_media.id <> "live"
         'Update progress, then update progressBar by refreshing individual video node
         contentType = "video"
         if m.selected_media.isAudio = true then
