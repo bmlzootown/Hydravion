@@ -6,3 +6,5 @@
 .vscode*
 dist*
 out*
+components/pasteyTask.brs
+components/pasteyTask.xml

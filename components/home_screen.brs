@@ -302,6 +302,7 @@ sub onVideoSelectedSetup(obj)
 
   resolutions = createObject("roArray", 10, true)
   twentyonesixty = false
+
   'Push parsed resolutions to array for easy access
   for each level in info.levels
     resolutions.Push(level.name)
@@ -314,18 +315,26 @@ sub onVideoSelectedSetup(obj)
   ? m.selected_media.title
   height = ""
   model = m.device.GetModel()
-  for i = m.supported.Count() - 1 to 0 step -1
-    tv = (strI(m.supported[i].height)).trim()
-    if m.arrutil.contains(resolutions, tv)
-      height = tv
-      if twentyonesixty = true and height = "1080"
-        if model = "3700X" or model = "3710X" or model = "3600X"
+  ? "getVideoMode: " + FormatJson(m.device.getVideoMode())
+  if model = "3700X" or model = "3710X" or model = "3600X"
+    for i = m.supported.Count() - 1 to 0 step -1
+      tv = (strI(m.supported[i].height)).trim()
+      if m.arrutil.contains(resolutions, tv)
+        height = tv
+        if twentyonesixty = true and height = "1080"
           height = "720"
         end if
+        exit for
       end if
-      exit for
-    end if
-  end for
+    end for
+  else 
+    for each level in info.levels
+      vidMode = m.device.getVideoMode()
+      if vidMode.Instr(level.name) <> -1 
+        height = level.name
+      end if
+    end for
+  end if
   if height = ""
     height = "720"
   end if
@@ -360,7 +369,7 @@ sub gotProgress(obj)
     m.selected_media.progress = progress[0].progress
   end if
 
-  ? m.selected_media
+  '? m.selected_media
 
   m.video_pre_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid
@@ -373,7 +382,7 @@ sub onProcessVideoSelected(obj)
   info = ParseJSON(obj.getData())
   m.info = info
   if m.resolution = invalid then
-    m.resolution = "1080p"
+    m.resolution = "1080"
   end if
 
   'm.selected_media.url = info.cdn + info.resource.uri
@@ -399,6 +408,7 @@ sub onProcessVideoSelected(obj)
   end if
 
   m.selected_media.url = cdn + uri
+  ? m.selected_media.url
 
   ? "DEFAULT RESOLUTION: " + m.resolution
   if m.playButtonPressed
@@ -748,7 +758,7 @@ sub handleDetailOptions(obj)
 
   if buttons[selectedButton] = "Select Resolution"
     'Select Resolution
-    ? "IT"
+    makeResolutionsOptions()
   else if buttons[selectedButton] = "Mark Watched"
     m.selected_media.progress = m.selected_media.duration
     setProgress(contentType, m.selected_media.guid, m.selected_media.progress)
@@ -882,7 +892,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "-Added progress bar" + Chr(10) + "-Added resume feature" + Chr(10) + "-Implemented syncing of video progress with FP API"
+  m.top.getScene().dialog.text = "- Fixed potential 4K playback issue" + Chr(10) + "- Fixes playback issue on older devices"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
