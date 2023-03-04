@@ -892,7 +892,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "- Fixed potential 4K playback issue" + Chr(10) + "- Fixes playback issue on older devices"
+  m.top.getScene().dialog.text = "- Fixed crash caused while loading creator cover images"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
