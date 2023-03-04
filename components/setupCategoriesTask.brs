@@ -30,7 +30,11 @@ function request()
     node.liveInfo = creator.liveStream
     node.icon = loadCacheImage(creator.icon.path)
     'Grab sub icon
-    node.HDPosterURL = loadCacheImage(creator.cover.childImages[0].path)
+    if creator.cover.childImages.Peek() = invalid
+      node.HDPosterURL = loadCacheImage(creator.cover.path)
+    else
+      node.HDPosterURL = loadCacheImage(creator.cover.childImages[0].path)
+    end if
     contentNode.appendChild(node)
   end for
 
