@@ -7,7 +7,7 @@ function request()
   version = appInfo.getVersion()
   useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
 
-  url = "https://beta.floatplane.com/api/auth/login"
+  url = "https://www.floatplane.com/api/auth/login"
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
   port = CreateObject("roMessagePort")

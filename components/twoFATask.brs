@@ -11,7 +11,7 @@ function request()
   sails = registry.read("sails", "hydravion")
   cookies = "sails.sid=" + sails
 
-  url = "https://beta.floatplane.com/api/auth/checkFor2faLogin"
+  url = "https://www.floatplane.com/api/auth/checkFor2faLogin"
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
   port = CreateObject("roMessagePort")

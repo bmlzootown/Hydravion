@@ -17,9 +17,9 @@ sub init()
     port = CreateObject("roMessagePort")
     https.SetMessagePort(port)
     if m.top.do = "like"
-        https.SetUrl("https://beta.floatplane.com/api/v3/content/like")
+        https.SetUrl("https://www.floatplane.com/api/v3/content/like")
     else
-        https.SetUrl("https://beta.floatplane.com/api/v3/content/dislike")
+        https.SetUrl("https://www.floatplane.com/api/v3/content/dislike")
     end if
     https.setCertificatesFile("common:/certs/ca-bundle.crt")
     https.AddHeader("Content-Type", "application/json")
