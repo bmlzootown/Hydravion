@@ -42,38 +42,29 @@ function request()
     node.attachments = media.attachmentOrder
     postType = CreateObject("roArray", 1, true)
     postType.shift()
-    if media.metadata.hasVideo = true
-        'node = createObject("roSGNode", "ContentNode")
-        'node.title = media.title
-        'node.ShortDescriptionLine1 = media.title
-        'node.Description = media.text
-        'node.guid = media.attachmentOrder[0]
+    if media.isAccessible = false
+      node.isAccessible = false
+    else
+      node.isAccessible = true
+      if media.metadata.hasVideo = true
         node.videoAttachments = media.videoAttachments
         node.guid = media.videoAttachments[0]
         node.duration = media.metadata.videoDuration
         vidIds.ids.Push(node.guid)
-        'node.id = media.releaseDate
         node.streamformat = "hls"
         node.hasVideo = true
         postType.push("Video")
-        'Check to see if thumbnail is cached
-        'node.HDPosterURL = loadCacheImage(video.thumbnail.childImages[0].path)
-        'node.HDPosterURL = media.thumbnail.path
-        'if media.thumbnail.childImages[0] <> invalid
-        ''    node.HDPosterURL = media.thumbnail.childImages[0].path
-        'end if
-
-        'postercontent.appendChild(node)
-    end if
-    if media.metadata.hasAudio = true
-        node.hasAudio = true
-        node.audioAttachments = media.audioAttachments
-        postType.push("Audio")
-    end if
-    if media.metadata.hasPicture = true
-      node.hasPicture = true
-      node.pictureAttachments = media.pictureAttachments
-      postType.push("Picture")
+      end if
+      if media.metadata.hasAudio = true
+          node.hasAudio = true
+          node.audioAttachments = media.audioAttachments
+          postType.push("Audio")
+      end if
+      if media.metadata.hasPicture = true
+        node.hasPicture = true
+        node.pictureAttachments = media.pictureAttachments
+        postType.push("Picture")
+      end if
     end if
     if media.metadata.hasVideo = false
       if media.metadata.hasAudio = false
@@ -110,6 +101,7 @@ function request()
   getProgress.setField("url", url)
   getProgress.setField("body", vidIds)
   getProgress.observeField("response", "gotProgress")
+  getProgress.observeField("error", "gotProgressError")
   getProgress.control = "RUN"
 
   'Next page button
@@ -139,7 +131,19 @@ sub gotProgress(obj)
   m.top.feed = m.postercontent
 end sub
 
+sub gotProgressError(obj)
+  for each node in m.postercontent.getChildren(-1, 0)
+    node.progress = "0"
+  end for
+
+  m.top.feed = m.postercontent
+end sub
+
 function loadCacheImage(url) as String
+  appInfo = createObject("roAppInfo")
+  version = appInfo.getVersion()
+  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+
   registry = RegistryUtil()
   sails = registry.read("sails", "hydravion")
   cookies = "sails.sid=" + sails
@@ -149,7 +153,7 @@ function loadCacheImage(url) as String
   xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
   xfer.InitClientCertificates()
   xfer.AddHeader("Accept", "application/json")
-  xfer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
+  xfer.AddHeader("User-Agent", useragent)
   xfer.AddHeader("Cookie", cookies)
 
   filename = url

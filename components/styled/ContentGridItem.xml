@@ -15,6 +15,7 @@
     'dislikes
     'duration
     'guid = videoGUID
+    'isAccessible
     'hasAudio
     'hasPicture
     'hasVideo
@@ -34,18 +35,23 @@
     sub init()
       m.top.id = "contentgriditem"
       m.itemposter = m.top.findNode("itemPoster") 
+      m.lockedContent = m.top.findNode("lockedContent")
       m.itemtitle = m.top.findNode("itemTitle")
       m.itembackground = m.top.findNode("itemBackground")
       m.posttype = m.top.findNode("postType")
       m.postduration = m.top.findNode("postDuration")
       m.progressbar = m.top.findNode("progressBar")
     end sub
+
     sub showContent()
       itemcontent = m.top.itemContent
       m.itemposter.uri = itemcontent.hdposterurl
       m.itemtitle.text = itemcontent.title
       m.posttype.text = itemcontent.postType
       m.postduration.text = itemcontent.postDuration
+      if itemcontent.isAccessible = false
+        m.lockedContent.visible = true
+      end if
       if m.itemtitle.text = "nextpage"
         m.itemtitle.text = "Next"
       else if m.itemtitle.text = "backpage"
@@ -67,6 +73,7 @@
         m.progressbar.width = 0
       end if
     end sub
+
     sub onItemFocus()
         if m.top.itemHasFocus
             m.itemtitle.repeatCount = -1
@@ -87,7 +94,19 @@
       height = "219" 
       loadWidth="390"
       loadHeight = "219"
-      scaleRotateCenter = "[ 256.0, 144.0 ]" />
+      scaleRotateCenter = "[ 256.0, 144.0 ]" >
+        <Poster 
+          id = "lockedContent"
+          uri = "pkg:/images/posterOverlay.png"
+          translation = "[ 0, 0 ]" 
+          loadDisplayMode = "scaleToFit"
+          width = "390" 
+          height = "219" 
+          loadWidth="390"
+          loadHeight = "219"
+          visible = "false" > 
+        </Poster>
+    </Poster>
     <Rectangle
 		  id="progressBar"
       translation = "[ 0.5, 220 ]" 

@@ -7,7 +7,6 @@ function init()
   m.streamCheckTimer = m.top.findNode("stream_timer")
 
   m.feedpage = 0
-  m.default_edge = "Edge01-na.floatplane.com"
   m.live = false
   m.playButtonPressed = false
 
@@ -15,6 +14,7 @@ function init()
 
   m.login_screen.observeField("next", "onNext")
   m.category_screen.observeField("category_selected", "onCategorySelected")
+  m.category_screen.observeField("channel_selected", "onChannelSelected")
   m.content_screen.observeField("content_selected", "onContentSelected")
   m.content_screen.observeField("itemIndex", "onItemFocus")
   m.details_screen.observeField("play_button_pressed", "onPlayButtonPressed")
@@ -28,6 +28,11 @@ function init()
   m.supported = m.device.GetSupportedGraphicsResolutions()
   
   m.arrutil = ArrayUtil()
+
+
+  appInfo = createObject("roAppInfo")
+  version = appInfo.getVersion()
+  m.useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
 
   registry = RegistryUtil()
   if registry.read("sails", "hydravion") <> invalid then
@@ -77,6 +82,7 @@ sub getSubs(obj)
   url = "https://www.floatplane.com/api/v3/user/subscriptions"
   m.subs_task.setField("url", url)
   m.subs_task.observeField("response", "onSubs")
+  m.subs_task.observeField("error", "onRequestError")
   m.subs_task.control = "RUN"
 end sub
 
@@ -89,12 +95,20 @@ end sub
 sub onCategoryResponse(obj)
   m.feed_task = createObject("roSGNode", "setupCategoriesTask")
   m.feed_task.setField("unparsed", obj.getData())
-  m.feed_task.observeField("category_node", "onCateogrySetup")
+  m.feed_task.observeField("category_node", "onCategorySetup")
   m.feed_task.control = "RUN"
 end sub
 
-sub onCateogrySetup(obj)
+sub onCategorySetup(obj)
   m.category_screen.findNode("category_list").content = obj.getData()
+  if m.category_screen.FindNode("category_list").content.getChildCount() = 0
+    closeDialog()
+    showMessageDialog("Error", "No subscriptions found!")
+    node = createObject("roSGNode", "category_node")
+    node.title = "None found!"
+    m.category_screen.FindNode("category_list").content.appendChild(node)
+  end if
+  'm.category_screen.findNode("channel_list").content = obj.getData()
   m.category_screen.setFocus(true)
 end sub
 
@@ -108,7 +122,9 @@ sub onCategorySelected(obj)
 
   'Grab stream info
   m.stream_cdn = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=live&entityId=" + item.liveInfo.id
+  if item.liveInfo <> invalid
+    url = "https://www.floatplane.com/api/v3/delivery/info?scenario=live&entityId=" + item.liveInfo.id
+  end if
   m.stream_cdn.setField("url", url)
   m.stream_cdn.observeField("response", "onGetStreamURL")
   m.stream_cdn.observeField("error", "onGotStreamError")
@@ -117,6 +133,39 @@ sub onCategorySelected(obj)
 
   m.feed_url = item.feed_url
   m.feed_page = 0
+end sub
+
+sub onChannelSelected(obj)
+  'Load feed for specific channel
+  list = m.category_screen.findNode("channel_list")
+  item = list.content.getChild(obj.getData())
+  ? item.title + " [" + item.creatorGUID + "]"
+  m.content_screen.setField("feed_name", item.title)
+  m.content_screen.setField("category_node", item)
+
+  m.feed_url = item.feed_url
+  m.feed_page = 0
+
+  m.creatorGUID = item.creatorGUID
+  creatorList = m.category_screen.findNode("category_list")
+  creators = creatorList.content.getChildren(-1,0)
+  liveInfoID = ""
+  for each c in creators
+    if m.creatorGUID = c.creatorGUID
+      liveInfoID = c.liveInfo.id
+    end if
+  end for
+
+  'Grab stream info
+  m.stream_cdn = CreateObject("roSGNode", "urlTask")
+  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=live&entityId=" + liveInfoID
+  m.stream_cdn.setField("url", url)
+  m.stream_cdn.observeField("response", "onGetStreamURL")
+  m.stream_cdn.observeField("error", "onGotStreamError")
+  m.stream_cdn.control = "RUN"
+
+  'm.content_screen.setField("streaming", false)
+  'loadFeed(m.feed_url, m.feed_page)
 end sub
 
 sub onGetStreamURL(obj)
@@ -202,6 +251,7 @@ sub loadFeed(url, page)
   m.feed_task = createObject("roSGNode", "urlTask")
   m.feed_task.setField("url", newurl)
   m.feed_task.observeField("response", "onFeedResponse")
+  m.feed_task.observeField("error", "onRequestError")
   m.feed_task.control = "RUN"
   m.feedpage = page
   m.feedurl = url
@@ -213,7 +263,7 @@ sub onFeedResponse(obj)
   m.setupFeed_task = createObject("roSGNode", "setupFeedTask")
   m.setupFeed_task.setField("unparsed_feed", unparsed_json)
   m.setupFeed_task.setField("streaming", m.isStreaming)
-  ''? m.stream_node
+  '? m.stream_node
   m.setupFeed_task.setField("stream_node", m.stream_node)
   m.setupFeed_task.setField("page", m.feedpage)
   m.setupFeed_task.observeField("feed", "onFeedSetup")
@@ -267,6 +317,7 @@ sub onContentSelected(obj)
     url = "https://www.floatplane.com/api/v3/content/post?id=" + m.selected_media.postId
     gpi.setField("url", url)
     gpi.observeField("response", "onPostInfo")
+    gpi.observeField("error", "onRequestError")
     gpi.control = "RUN"
   end if
 end sub
@@ -286,6 +337,7 @@ sub onPostInfo(obj)
     url = "https://www.floatplane.com/api/video/info?videoGUID=" + m.selected_media.videoAttachments[0].id
     m.selected_task.setField("url", url)
     m.selected_task.observeField("response", "onVideoSelectedSetup")
+    m.selected_task.observeField("error", "onRequestError")
     m.selected_task.control = "RUN"
   else
     m.selected_media.description = removeHtmlTags(m.selected_media.description)
@@ -294,6 +346,11 @@ sub onPostInfo(obj)
     m.details_screen.visible = true
     m.details_screen.setFocus(true)
   end if
+end sub
+
+sub onRequestError(obj)
+  error = ParseJSON(obj.getData())
+  showMessageDialog(error.errors[0].name, error.errors[0].message)
 end sub
 
 sub onVideoSelectedSetup(obj)
@@ -360,6 +417,7 @@ sub onVideoSelectedSetup(obj)
   getProgress.setField("url", url)
   getProgress.setField("body", data)
   getProgress.observeField("response", "gotProgress")
+  getProgress.observeField("error", "gotProgressError")
   getProgress.control = "RUN"
 end sub
 
@@ -368,9 +426,15 @@ sub gotProgress(obj)
   if progress[0] <> Invalid
     m.selected_media.progress = progress[0].progress
   end if
+  doPreProcessVideoSelected()
+end sub
 
-  '? m.selected_media
+sub gotProgressError(obj)
+  m.selected_media.progress = "0"
+  doPreProcessVideoSelected()
+end sub
 
+sub doPreProcessVideoSelected()
   m.video_pre_task = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid
   m.video_pre_task.setField("url", url)
@@ -430,7 +494,6 @@ sub onPreBuffer(obj)
   'm.videoplayer.visible = true
   'm.videoplayer.setFocus(true)
   ''? obj.getData()
-  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").Replace(m.default_edge,edge).DecodeUri()
   'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
   '? m.selected_media.url
   m.videoplayer.content = m.selected_media
@@ -524,7 +587,7 @@ sub doLive()
       m.live_task.control = "RUN"
     end if
   else 
-    showMessageDialog("insufficientSubscriptionLevelError", "You do not have the necessary subscription to access this stream.")
+    showMessageDialog("Error", "Individual channels do not currently support livestreams. Go back to subscription screen and select main subscription to watch livestreams.")
   end if
 end sub
 
@@ -535,7 +598,7 @@ sub loadLiveFloat(obj)
   videoContent.StreamFormat = "hls"
   time = CreateObject("roDateTime")
   now = time.AsSeconds()
-  videoContent.PlayStart = now + 9000
+  videoContent.PlayStart = now + 999999
   videoContent.live = true
 
   m.content_screen.visible = false
@@ -543,7 +606,8 @@ sub loadLiveFloat(obj)
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
-  m.videoplayer.seek = m.videoplayer.pauseBufferEnd
+  'm.videoplayer.seek = m.videoplayer.pauseBufferEnd
+  m.videoplayer.seek = 999999
 end sub
 
 sub loadLiveStuff(obj)
@@ -553,7 +617,7 @@ sub loadLiveStuff(obj)
   videoContent.StreamFormat = "hls"
   time = CreateObject("roDateTime")
   now = time.AsSeconds()
-  videoContent.PlayStart = now + 9000
+  videoContent.PlayStart = now + 999999
   videoContent.live = true
 
   m.content_screen.visible = false
@@ -561,7 +625,8 @@ sub loadLiveStuff(obj)
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
-  m.videoplayer.seek = m.videoplayer.pauseBufferEnd
+  'm.videoplayer.seek = m.videoplayer.pauseBufferEnd
+  m.videoplayer.seek = 999999
 end sub
 
 sub onPlayVideo(obj)
@@ -623,7 +688,7 @@ sub initializeVideoPlayer()
   m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
   m.videoplayer.initClientCertificates()
   m.videoplayer.SetConnectionTimeout(30)
-  m.videoplayer.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
+  m.videoplayer.AddHeader("User-Agent", m.useragent)
   m.videoplayer.AddHeader("Cookie", cookies)
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
@@ -854,7 +919,9 @@ sub showMessageDialog(title, message)
 end sub
 
 sub closeDialog()
-  m.top.getScene().dialog.close = true
+  if m.top.getScene().dialog <> invalid 
+    m.top.getScene().dialog.close = true
+  end if
 end sub
 
 sub doLogout()
@@ -892,7 +959,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "- Fixed crash caused while loading creator cover images"
+  m.top.getScene().dialog.text = "- Fixed crash related to inaccessible content" + chr(10) + "- Added better error handling"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
