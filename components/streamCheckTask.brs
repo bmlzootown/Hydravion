@@ -4,6 +4,10 @@ sub init()
 end sub
 
 function request()
+  appInfo = createObject("roAppInfo")
+  version = appInfo.getVersion()
+  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+
   registry = RegistryUtil()
   sails = registry.read("sails", "hydravion")
   cookies = "sails.sid=" + sails
@@ -13,7 +17,7 @@ function request()
     timeout: 3000,
     method: "GET",
     headers: {
-        "User-Agent": "Hydravion (Roku), CFNetwork",
+        "User-Agent": useragent,
         "Cookie": cookies
     }
   })

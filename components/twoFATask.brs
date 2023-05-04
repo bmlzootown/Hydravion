@@ -3,11 +3,15 @@ sub init()
 end sub
 
 function request()
+  appInfo = createObject("roAppInfo")
+  version = appInfo.getVersion()
+  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+
   registry = RegistryUtil()
   sails = registry.read("sails", "hydravion")
   cookies = "sails.sid=" + sails
 
-  url = "https://www.floatplane.com/api/auth/checkFor2faLogin"
+  url = "https://beta.floatplane.com/api/auth/checkFor2faLogin"
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
   port = CreateObject("roMessagePort")
@@ -15,7 +19,7 @@ function request()
   https.SetUrl(url)
   https.setCertificatesFile("common:/certs/ca-bundle.crt")
   https.AddHeader("Content-Type", "application/json")
-  https.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
+  https.AddHeader("User-Agent", useragent)
   https.AddHeader("Cookie", cookies)
   https.initClientCertificates()
 

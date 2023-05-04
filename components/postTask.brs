@@ -10,6 +10,10 @@ sub init()
       m.top.error = "Invalid SAILS cookie!"
     end if
     cookies = "sails.sid=" + sails
+
+    appInfo = createObject("roAppInfo")
+    version = appInfo.getVersion()
+    useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
   
     https = CreateObject("roUrlTransfer")
     https.RetainBodyOnError(true)
@@ -18,7 +22,7 @@ sub init()
     https.SetUrl(m.top.url)
     https.setCertificatesFile("common:/certs/ca-bundle.crt")
     https.AddHeader("Content-Type", "text/plain")
-    https.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
+    https.AddHeader("User-Agent", useragent)
     https.AddHeader("Cookie", cookies)
     https.initClientCertificates()
     

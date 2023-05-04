@@ -11,6 +11,10 @@ function request()
   end if
   cookies = "sails.sid=" + sails
 
+  appInfo = createObject("roAppInfo")
+  version = appInfo.getVersion()
+  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
   port = CreateObject("roMessagePort")
@@ -18,7 +22,7 @@ function request()
   https.SetUrl(m.top.url)
   https.setCertificatesFile("common:/certs/ca-bundle.crt")
   https.AddHeader("Accept", "application/json")
-  https.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
+  https.AddHeader("User-Agent", useragent)
   https.AddHeader("Cookie", cookies)
   https.initClientCertificates()
 

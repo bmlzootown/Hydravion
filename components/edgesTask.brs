@@ -13,13 +13,17 @@ function request()
   sails = registry.read("sails", "hydravion")
   cookies = "sails.sid=" + sails
 
+  appInfo = createObject("roAppInfo")
+  version = appInfo.getVersion()
+  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+
   for each edge in edges.edges
     m.https = CreateObject("roUrlTransfer")
     'm.https.RetainBodyOnError(true)
     m.https.setCertificatesFile("common:/certs/ca-bundle.crt")
     m.https.initClientCertificates()
     m.https.AddHeader("Cookie", cookies)
-    m.https.AddHeader("User-Agent", "Hydravion (Roku), CFNetwork")
+    m.https.AddHeader("User-Agent", useragent)
     port = CreateObject("roMessagePort")
     m.https.SetMessagePort(port)
     host = edge.hostname.Split(".")
