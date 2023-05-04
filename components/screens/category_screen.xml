@@ -2,6 +2,7 @@
 <component name="category_screen" extends="group" >
   <interface>
     <field id="category_selected" type="assocarray" alias="category_list.itemSelected" />
+    <field id="channel_selected" type="assocarray" alias="channel_list.itemSelected" />
   </interface>
   <children>
     <Poster
@@ -28,8 +29,27 @@
     <MarkupList
       id="category_list"
       translation="[100,200]"
-      itemSize="[520,70]"
+      itemSize="[350,70]"
       itemSpacing="[10,10]"
+      numRows="5"
+      focusBitmapBlendColor="0xFFFFFF50"
+      itemComponentName="CreatorGridItem" />
+    <Poster
+      id="chevron-right"
+      uri="pkg:/images/chevron-right.png"
+      loadDisplayMode = "scaleToFit"
+			width="50"
+      height="50"
+      loadWidth="50"
+      loadHeight="50"
+      translation="[500,210]"
+			opacity="0.5" />
+    <MarkupList
+      id="channel_list"
+      translation="[600,200]"
+      itemSize="[350,70]"
+      itemSpacing="[10,10]"
+      numRows="5"
       focusBitmapBlendColor="0xFFFFFF50"
       itemComponentName="CreatorGridItem" />
   </children>

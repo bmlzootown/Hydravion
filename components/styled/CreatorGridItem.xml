@@ -30,7 +30,11 @@
     end sub
 
     sub onItemFocus()
-        
+      if m.top.itemHasFocus
+        m.name.repeatCount = "-1"
+      else
+        m.name.repeatCount = "0"
+      end if
     end sub
 
     ]]>
@@ -43,9 +47,12 @@
         width="60" 
         fixsize="true"
         translation= "[0, 5]" />
-    <Label
+    <ScrollingLabel
         id="creatorName"
         font="font:MediumSystemFont"
+        maxWidth="350"
+        repeatCount="0"
+        scrollSpeed="50"
         translation="[ 80, 20 ]"/>
   </children>
 </component>
