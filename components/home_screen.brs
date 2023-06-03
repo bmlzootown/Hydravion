@@ -514,35 +514,68 @@ sub onResumeButtonPressed(obj)
 end sub
 
 sub onAttachedMediaSelected(obj)
+  ? "ATTACHED MEDIA SELECTED"
   m.attached_media = m.details_screen.findNode("attachmentsList").content.getChild(obj.getData())
 
   attachmentTask = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.attached_media.guid
   attachmentTask.setField("url", url)
   attachmentTask.observeField("response", "onProcessAttachedMedia")
+  'attachmentTask.observeField("response", "onProcessVideoSelected")
+  m.playButtonPressed = true
   attachmentTask.control = "RUN"
 end sub
 
 sub onProcessAttachedMedia(obj)
   info = ParseJSON(obj.getData())
+
+  if m.resolution = invalid then
+    m.resolution = "1080"
+  end if
+
+  'm.selected_media.url = info.cdn + info.resource.uri
+  variants = info.groups[0].variants
   cdn = info.groups[0].origins[0].url
-  uri = info.groups[0].variants[0].url
+  uri = ""
+
+  for i = 0 to (variants.Count()-1)
+    variant = variants[i]
+    if variant.enabled = false then
+      variants.Delete(i)
+    end if
+  end for
+
+  for each variant in variants
+    if variant.label.Instr(m.resolution) <> -1 then
+      uri = variant.url
+    end if
+  end for
+
+  if uri = "" then
+    uri = variants.Peek().url
+  end if
+
   m.selected_media = m.attached_media
   m.selected_media.url = cdn + uri
+  ? "Attachment URL: " + m.selected_media.url
 
   m.videoplayer.content = m.selected_media
   if m.selected_media.isVideo = true
-    m.playButtonPressed = true
-    onProcessVideoSelected(obj)
+    playAttachedMedia()
   else if m.selected_media.isAudio = true
-    m.details_screen.visible = false
-    m.details_screen.setFocus(false)
-    m.videoplayer.visible = true
-    m.videoplayer.setFocus(true)
-    m.videoplayer.control = "play"
-    if m.video_task <> invalid
-      m.playButtonPressed = true
-    end if
+    m.selected_media.url = info.groups[0].origins[0].url + info.groups[0].variants[0].url
+    playAttachedMedia()
+  end if
+end sub
+
+sub playAttachedMedia()
+  m.details_screen.visible = false
+  m.videoplayer.visible = true
+  m.videoplayer.setFocus(true)
+  m.videoplayer.content = m.selected_media
+  m.videoplayer.control = "play"
+  if m.video_task <> invalid
+    m.playButtonPressed = true
   end if
 end sub
 
@@ -630,13 +663,11 @@ sub loadLiveStuff(obj)
 end sub
 
 sub onPlayVideo(obj)
-  ? "TITLE: " + m.selected_media.ShortDescriptionLine1
   if m.resolution <> invalid then
-    ? "RESOLUTION SELECTED: " + m.resolution
     cdn = m.info.groups[0].origins[0].url
     uri = ""
     for each variant in m.info.groups[0].variants
-      if variant.label.Instr(m.resolution) <> -1 then
+      if variant.name.Instr(m.resolution) <> -1 then
         uri = variant.url
       end if
     end for
@@ -865,7 +896,12 @@ end sub
 sub handleResolutionsOptions()
   url = ""
   m.video_task = CreateObject("roSGNode", "urlTask")
-  m.resolution = m.dbuttons[m.top.getScene().dialog.buttonSelected]
+  selected = m.dbuttons[m.top.getScene().dialog.buttonSelected]
+  if selected = "4k"
+    m.resolution = "2160"
+  else
+    m.resolution = Left(selected, Len(selected) - 1)
+  end if
   ? "RESOLUTION SELECTED: " + m.resolution
   m.top.getScene().dialog.close = true
   m.content_screen.setFocus(true)
@@ -959,7 +995,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "- Fixed crash related to inaccessible content" + chr(10) + "- Added better error handling"
+  m.top.getScene().dialog.text = "- Fixed playback of attachments and selected resolutions"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub

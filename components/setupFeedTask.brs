@@ -50,6 +50,9 @@ function request()
         node.videoAttachments = media.videoAttachments
         node.guid = media.videoAttachments[0]
         node.duration = media.metadata.videoDuration
+        if media.metadata.videoCount > 0
+          node.duration = media.metadata.videoDuration / media.metadata.videoCount
+        end if
         vidIds.ids.Push(node.guid)
         node.streamformat = "hls"
         node.hasVideo = true
@@ -81,6 +84,9 @@ function request()
       end if
     else
       d = media.metadata.videoDuration
+      if media.metadata.videoCount > 0
+        d = media.metadata.videoDuration / media.metadata.videoCount
+      end if
     end if
 
     time = CreateObject("roDateTime")
