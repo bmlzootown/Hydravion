@@ -514,14 +514,12 @@ sub onResumeButtonPressed(obj)
 end sub
 
 sub onAttachedMediaSelected(obj)
-  ? "ATTACHED MEDIA SELECTED"
   m.attached_media = m.details_screen.findNode("attachmentsList").content.getChild(obj.getData())
 
   attachmentTask = CreateObject("roSGNode", "urlTask")
   url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.attached_media.guid
   attachmentTask.setField("url", url)
   attachmentTask.observeField("response", "onProcessAttachedMedia")
-  'attachmentTask.observeField("response", "onProcessVideoSelected")
   m.playButtonPressed = true
   attachmentTask.control = "RUN"
 end sub
@@ -995,7 +993,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "- Fixed playback of attachments and selected resolutions"
+  m.top.getScene().dialog.text = "- Fixed playback of attachments and selected resolutions" + chr(10) + "- Fixed progress bar for videos with multiple attachments"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
