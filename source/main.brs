@@ -4,7 +4,9 @@ sub Main(args as Dynamic)
   screen.setMessageport(m.port)
   scene = screen.createScene("home_screen")
   scene.observeField("exit", port)
-  screen.Show() ' vscode_rale_tracker_entry
+  screen.Show() 
+  ' vscode_rale_tracker_entry 
+  ' vscode_rdb_on_device_component_entry
   scene.backgroundUri = ""
   scene.backgroundColor = "0x070b10"
   scene.setFocus(true)

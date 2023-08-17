@@ -69,7 +69,7 @@ ZIPREL := $(DISTREL)/apps
 PKGREL := $(DISTREL)/packages
 CHECK_TMP_DIR := $(DISTREL)/tmp-check
 
-DATE_TIME := $(shell date +%F-%T)
+DATE_TIME := $(shell date +%F_%H-%M-%S)
 
 APP_ZIP_FILE := $(ZIPREL)/$(APPNAME).zip
 APP_PKG_FILE := $(PKGREL)/$(APPNAME)_$(DATE_TIME).pkg
