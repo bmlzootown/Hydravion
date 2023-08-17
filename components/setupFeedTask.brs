@@ -33,10 +33,13 @@ function request()
     node.Description = media.text
     node.id = media.releaseDate
     node.postId = media.id
-    node.HDPosterURL = media.thumbnail.path
-    if media.thumbnail.childImages[0] <> invalid
+    if media.thumbnail <> invalid
+      node.HDPosterURL = media.thumbnail.path
+      if media.thumbnail.childImages[0] <> invalid
         node.HDPosterURL = media.thumbnail.childImages[0].path
+      end if
     end if
+    
     node.likes = media.likes
     node.dislikes = media.dislikes
     node.attachments = media.attachmentOrder
