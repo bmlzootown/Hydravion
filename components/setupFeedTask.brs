@@ -38,6 +38,8 @@ function request()
       if media.thumbnail.childImages[0] <> invalid
         node.HDPosterURL = media.thumbnail.childImages[0].path
       end if
+    else
+      node.HDPosterUrl = "pkg:/images/noThumbnail.png"
     end if
     
     node.likes = media.likes
