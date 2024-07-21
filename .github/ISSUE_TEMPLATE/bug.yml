@@ -7,7 +7,7 @@ body:
         label: Checklist before submitting a bug report
         options:
         - label: This bug/issue is affecting the Hydravion Roku Channel
-          descriptiom: For other platforms see [here](https://github.com/bmlzootown/Hydravion/issues/new/choose)
+          description: For other platforms see [here](https://github.com/bmlzootown/Hydravion/issues/new/choose)
           required: true
         - label: I've searched for existing [issues](https://github.com/bmlzootown/Hydravion/issues?q=is:issue) and found no duplicates
           required: true
