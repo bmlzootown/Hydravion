@@ -7,7 +7,6 @@ body:
         label: Checklist before submitting a feature request
         options:
         - label: This feature request is for the Hydravion Roku Channel
-          descriptiom: For other platforms see [here](https://github.com/bmlzootown/Hydravion/issues/new/choose)
           required: true
         - label: I've searched for existing [requests](https://github.com/bmlzootown/Hydravion/issues?q=is:issue) and found no duplicates
           required: true
