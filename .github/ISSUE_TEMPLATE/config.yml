@@ -1,16 +1,4 @@
 blank_issues_enabled: true
-issue_templates:
-  - name: Bug Report
-    description: Report a bug/issue affecting the Hydravion Roku Channel
-    labels: ["bug"]
-    title: "[BUG] "
-    body: .github/ISSUE_TEMPLATE/bug.yml
-
-  - name: Feature Request
-    description: Feature request for the Hydravion Roku Channel
-    labels: ["enhancement"]
-    title: "[REQUEST] "
-    body: .github/ISSUE_TEMPLATE/feature.yml
 contact_links:
   - name: AndroidTV issues, feedback & feature requests
     url: https://github.com/bmlzootown/Hydravion-AndroidTV/issues
