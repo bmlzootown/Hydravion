@@ -997,7 +997,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "- Fixed playback of attachments and selected resolutions" + chr(10) + "- Fixed progress bar for videos with multiple attachments"
+  m.top.getScene().dialog.text = "- Fixed issue loading certain creators/channels"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
