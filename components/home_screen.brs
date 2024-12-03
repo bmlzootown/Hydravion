@@ -120,19 +120,23 @@ sub onCategorySelected(obj)
   m.content_screen.setField("feed_name", item.title)
   m.content_screen.setField("category_node", item)
 
+  m.feed_url = item.feed_url
+  m.feed_page = 0
+
   'Grab stream info
   m.stream_cdn = CreateObject("roSGNode", "urlTask")
   if item.liveInfo <> invalid
     url = "https://www.floatplane.com/api/v3/delivery/info?scenario=live&entityId=" + item.liveInfo.id
+    
+    m.stream_cdn.setField("url", url)
+    m.stream_cdn.observeField("response", "onGetStreamURL")
+    m.stream_cdn.observeField("error", "onGotStreamError")
+    m.stream_cdn.control = "RUN"
+    m.creatorGUID = item.creatorGUID
+  else if item.liveInfo = invalid
+    m.content_screen.setField("streaming", false)
+    loadFeed(m.feed_url, m.feed_page)
   end if
-  m.stream_cdn.setField("url", url)
-  m.stream_cdn.observeField("response", "onGetStreamURL")
-  m.stream_cdn.observeField("error", "onGotStreamError")
-  m.stream_cdn.control = "RUN"
-  m.creatorGUID = item.creatorGUID
-
-  m.feed_url = item.feed_url
-  m.feed_page = 0
 end sub
 
 sub onChannelSelected(obj)
