@@ -37,9 +37,32 @@ function init()
   ' Observe reset field to restart QR code flow
   m.top.observeField("reset", "onReset")
   
-  ' Start QR code flow by default
-  startQRCodeFlow()
+  ' Observe visible field to start QR code flow when screen becomes visible
+  m.top.observeField("visible", "onVisibleChanged")
+  
+  ' Track if QR flow has been started to avoid starting it multiple times
+  m.qrFlowStarted = false
+  
+  ' Start QR code flow if screen is already visible
+  if m.top.visible = true
+    startQRCodeFlow()
+    m.qrFlowStarted = true
+  end if
 end function
+
+sub onVisibleChanged(obj)
+  if m.top.visible = true and not m.qrFlowStarted
+    ' Screen became visible and QR flow hasn't started yet
+    startQRCodeFlow()
+    m.qrFlowStarted = true
+  else if m.top.visible = false
+    ' Screen hidden - stop QR flow and reset flag
+    if m.cookieTask <> invalid
+      m.cookieTask.control = "STOP"
+    end if
+    m.qrFlowStarted = false
+  end if
+end sub
 
 sub onNextTimerFire()
   ' Set next field asynchronously to ensure observer fires
@@ -73,8 +96,12 @@ sub onReset()
       m.cookieTask.control = "STOP"
     end if
     
+    ' Reset QR flow flag so it can start again
+    m.qrFlowStarted = false
+    
     ' Restart QR code flow
     startQRCodeFlow()
+    m.qrFlowStarted = true
     
     ' Reset the field
     m.top.reset = false

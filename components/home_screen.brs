@@ -38,7 +38,10 @@ function init()
   if registry.read("sails", "hydravion") <> invalid then
     'Check whether cookies are set, if not we login. If found, we head over to onNext()
     m.login_screen.visible = false
-    onNext("test")
+    ' Set next field to trigger the login flow (onNext checks for "beep" prefix)
+    time = CreateObject("roDateTime")
+    m.login_screen.next = "beep" + time.AsSeconds().ToStr()
+    ' The observer will fire and call onNext automatically
     'Signal that we are logged in and we have completed launch
     'm.top.signalBeacon("AppDialogComplete")
   else
@@ -1051,7 +1054,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "- Fixed issue loading certain creators/channels"
+  m.top.getScene().dialog.text = "- Workaround for login changes"
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
