@@ -42,6 +42,7 @@ sub request()
   escapedData = urlTransfer.Escape(qrData)
   qrCodeApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" + escapedData
   m.top.qrCodeUrl = qrCodeApiUrl
+  m.top.serverUrl = serverUrl
   m.top.status = "QR_CODE_READY"
   
   print "[PROGRESS] QR code generated"

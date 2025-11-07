@@ -23,10 +23,19 @@
       loadDisplayMode="scaleToFit" />
 
     <Label
+      id="qrCodeUrl"
+      font="font:SmallSystemFont"
+      horizAlign="center"
+      text=""
+      translation="[900,560]"
+      width="300"
+      visible="false" />
+
+    <Label
       id="qrCodeInstructions"
       font="font:SmallSystemFont"
       horizAlign="left"
-      text="Scan QR code with your phone to enter cookie"
+      text="Scan the QR code to enter requisite cookie."
       translation="[200,220]"
       width="600"
       visible="true" />
@@ -35,7 +44,7 @@
       id="instructions"
       font="font:SmallSystemFont"
       horizAlign="left"
-      text="Enter your sails.sid cookie from floatplane.com"
+      text="You can also visit the url below the QR code."
       translation="[200,260]"
       width="600" />
 
@@ -43,7 +52,7 @@
       id="browserInstructions"
       font="font:SmallSystemFont"
       horizAlign="left"
-      text="How to get it:"
+      text="How to get cookie:"
       translation="[200,300]"
       width="600" />
 
@@ -75,7 +84,7 @@
       id="instructionsList3b"
       font="font:SmallSystemFont"
       horizAlign="left"
-      text="   > Cookies > floatplane.com"
+      text="    > Cookies > floatplane.com"
       translation="[220,420]"
       width="600" />
 
@@ -83,7 +92,7 @@
       id="instructionsList4"
       font="font:SmallSystemFont"
       horizAlign="left"
-      text="4. Copy the value of the sails.sid cookie"
+      text="4. Copy the value of sails.sid and paste in browser"
       translation="[220,450]"
       width="600" />
 
@@ -99,7 +108,7 @@
       id="rokuAppHint2"
       font="font:SmallSystemFont"
       horizAlign="left"
-      text="devtools.web.roku.com/RokuRemote/ for easier entry"
+      text="devtools.web.roku.com/RokuRemote for easier entry"
       translation="[200,517]"
       width="600" />
 

@@ -8,6 +8,7 @@ function init()
   m.submitHint = m.top.findNode("submitHint")
 
   m.qrCode = m.top.findNode("qrCode")
+  m.qrCodeUrl = m.top.findNode("qrCodeUrl")
   m.qrCodeInstructions = m.top.findNode("qrCodeInstructions")
 
   m.keyboard = m.top.findNode("inputKeyboard")
@@ -85,6 +86,7 @@ sub onReset()
     
     ' Show QR code and instructions again
     m.qrCode.visible = true
+    m.qrCodeUrl.visible = true
     m.qrCodeInstructions.visible = true
     showInstructions()
     
@@ -112,6 +114,7 @@ sub startQRCodeFlow()
   ' Show QR code by default
   m.showingManualEntry = false
   m.qrCode.visible = true
+  m.qrCodeUrl.visible = true
   m.qrCodeInstructions.visible = true
   m.manualEntryButton.visible = true
   m.manualEntryButton.setFocus(true)
@@ -119,6 +122,7 @@ sub startQRCodeFlow()
   ' Start cookie entry task
   m.cookieTask = createObject("roSGNode", "cookieEntryTask")
   m.cookieTask.observeField("qrCodeUrl", "onQRCodeReady")
+  m.cookieTask.observeField("serverUrl", "onServerUrlReady")
   m.cookieTask.observeField("sailsSid", "onCookieReceived")
   m.cookieTask.observeField("status", "onCookieStatusChanged")
   m.cookieTask.observeField("error", "onCookieError")
@@ -130,8 +134,17 @@ sub onQRCodeReady(obj)
   qrUrl = obj.getData()
   if qrUrl <> invalid and qrUrl <> ""
     m.qrCode.uri = qrUrl
-    m.qrCodeInstructions.text = "Scan QR code with your phone to enter the sails.sid cookie"
+    m.qrCodeInstructions.text = "Scan the QR code to enter requisite cookie."
     print "[PROGRESS] QR code displayed"
+  end if
+end sub
+
+sub onServerUrlReady(obj)
+  serverUrl = obj.getData()
+  if serverUrl <> invalid and serverUrl <> ""
+    m.qrCodeUrl.text = serverUrl
+    m.qrCodeUrl.visible = true
+    print "[PROGRESS] Server URL displayed: " + serverUrl
   end if
 end sub
 
@@ -174,7 +187,7 @@ end sub
 sub onCookieStatusChanged(obj)
   status = obj.getData()
   if status = "QR_CODE_READY"
-    m.qrCodeInstructions.text = "Scan QR code with your phone to enter the sails.sid cookie"
+    m.qrCodeInstructions.text = "Scan the QR code to enter requisite cookie."
   else if status = "COOKIE_RECEIVED"
     m.qrCodeInstructions.text = "Cookie received! Logging in..."
   else if status = "TIMEOUT"
@@ -274,6 +287,7 @@ sub onManualEntryButton()
   ' User clicked "Manual Entry" - go directly to keyboard input
   m.showingManualEntry = true
   m.qrCode.visible = false
+  m.qrCodeUrl.visible = false
   m.qrCodeInstructions.visible = false
   onInputSailsCookie()
 end sub
@@ -336,6 +350,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
           ' Go back to main screen if no text entered
           m.showingManualEntry = false
           m.qrCode.visible = true
+          m.qrCodeUrl.visible = true
           m.qrCodeInstructions.visible = true
           m.manualEntryButton.setFocus(true)
         end if
@@ -354,6 +369,7 @@ function onKeyEvent(key as String, press as Boolean) as Boolean
           ' Go back to main screen
           m.showingManualEntry = false
           m.qrCode.visible = true
+          m.qrCodeUrl.visible = true
           m.qrCodeInstructions.visible = true
           m.manualEntryButton.setFocus(true)
           return true

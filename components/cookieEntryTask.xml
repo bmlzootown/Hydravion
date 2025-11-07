@@ -3,6 +3,7 @@
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
   <interface>
     <field id="qrCodeUrl" type="string" />
+    <field id="serverUrl" type="string" />
     <field id="sailsSid" type="string" />
     <field id="status" type="string" />
     <field id="error" type="string" />
