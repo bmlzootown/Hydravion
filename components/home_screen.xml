@@ -4,7 +4,7 @@
   <children>
     <login_screen
       id="login_screen"
-      visible="true"
+      visible="false"
       translation="[0,0]" />
     <category_screen
       id="category_screen"

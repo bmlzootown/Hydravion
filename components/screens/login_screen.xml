@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<component name="login_screen" extends="group" initialFocus="username">
+<component name="login_screen" extends="group" initialFocus="manualEntryButton">
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
   <interface>
     <field id="next" type="string" />
     <field id="skip" type="string" />
+    <field id="reset" type="boolean" />
   </interface>
   <children>
     <Label
@@ -12,45 +13,120 @@
       horizAlign="center"
       text = "Login"
       translation="[525,50]" />
-    <Button
-      id="username"
-      iconUri=""
-      focusedIconUri=""
-      textColor="0xFFFFFF"
-      height="75"
-      focusedTextColor="0x111111"
-      text="Username"
-      translation="[515,170]" />
+
+    <Poster
+      id="qrCode"
+      width="300"
+      height="300"
+      translation="[900,250]"
+      visible="true"
+      loadDisplayMode="scaleToFit" />
+
+    <Label
+      id="qrCodeInstructions"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="Scan QR code with your phone to enter cookie"
+      translation="[200,220]"
+      width="600"
+      visible="true" />
+
+    <Label
+      id="instructions"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="Enter your sails.sid cookie from floatplane.com"
+      translation="[200,260]"
+      width="600" />
+
+    <Label
+      id="browserInstructions"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="How to get it:"
+      translation="[200,300]"
+      width="600" />
+
+    <Label
+      id="instructionsList"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="1. Log in to floatplane.com"
+      translation="[220,330]"
+      width="600" />
+
+    <Label
+      id="instructionsList2"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="2. Open DevTools (F12)"
+      translation="[220,360]"
+      width="600" />
+
+    <Label
+      id="instructionsList3a"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="3. Go to Application (Chrome) or Storage (Firefox)"
+      translation="[220,390]"
+      width="600" />
+
+    <Label
+      id="instructionsList3b"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="   > Cookies > floatplane.com"
+      translation="[220,420]"
+      width="600" />
+
+    <Label
+      id="instructionsList4"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="4. Copy the value of the sails.sid cookie"
+      translation="[220,450]"
+      width="600" />
+
+    <Label
+      id="rokuAppHint"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="Tip for Manual Entry: Use the Roku app on your phone or"
+      translation="[200,490]"
+      width="600" />
+
+    <Label
+      id="rokuAppHint2"
+      font="font:SmallSystemFont"
+      horizAlign="left"
+      text="devtools.web.roku.com/RokuRemote/ for easier entry"
+      translation="[200,517]"
+      width="600" />
 
     <Button
-      id="password"
+      id="manualEntryButton"
       iconUri=""
       focusedIconUri=""
       textColor="0xFFFFFF"
       height="75"
       focusedTextColor="0x111111"
-      text="Password"
-      translation="[515,250]" />
+      text="Manual Entry"
+      translation="[200,560]" />
 
-    <Button
-      id="login"
-      iconUri=""
-      focusedIconUri=""
-      textColor="0xFFFFFF"
-      height="75"
-      focusedTextColor="0x111111"
-      text="Login"
-      translation="[515,350]" />
+    <Label
+      id="submitHint"
+      font="font:MediumBoldSystemFont"
+      horizAlign="right"
+      text="Press Play to Submit"
+      translation="[700,340]"
+      width="400"
+      visible="false" />
 
     <Keyboard
       id="inputKeyboard"
       text=""
       focusedKeyColor="0xFFFFFFFF"
       translation="[169,417]" />
-
-    <Timer
-      id="LoginTimer"
-      duration="6" />
   </children>
   <script type="text/brightscript" uri="pkg:/components/screens/login_screen.brs" />
 </component>
