@@ -100,7 +100,7 @@
       id="instructionsList"
       font="font:SmallSystemFont"
       horizAlign="left"
-      text="1. Log in to floatplane.com"
+      text="1. Login to floatplane.com"
       translation="[220,330]"
       width="600" />
 
