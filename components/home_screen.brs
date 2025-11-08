@@ -397,6 +397,8 @@ end sub
 
 sub onRequestError(obj)
   error = ParseJSON(obj.getData())
+  ' Store error info for closeDialog to check
+  m.lastError = error
   showMessageDialog(error.errors[0].name, error.errors[0].message)
 end sub
 
@@ -1010,6 +1012,28 @@ end sub
 sub closeDialog()
   if m.top.getScene().dialog <> invalid 
     m.top.getScene().dialog.close = true
+    ' Check if this was a login error and navigate back to login screen
+    if m.lastError <> invalid and m.lastError.errors <> invalid and m.lastError.errors.Count() > 0
+      if m.lastError.errors[0].name = "notLoggedInError"
+        ' Navigate back to login screen
+        m.category_screen.visible = false
+        m.content_screen.visible = false
+        m.details_screen.visible = false
+        m.login_screen.visible = true
+        m.login_screen.setFocus(true)
+        ' Re-establish observer in case it was lost
+        m.login_screen.observeField("next", "onNext")
+        ' Reset the login screen to restart QR code flow
+        m.login_screen.setField("reset", true)
+        ' Set focus on the manual entry button for the new login screen
+        manualEntryButton = m.login_screen.findNode("manualEntryButton")
+        if manualEntryButton <> invalid
+          manualEntryButton.setFocus(true)
+        end if
+        ' Clear the error reference
+        m.lastError = invalid
+      end if
+    end if
   end if
 end sub
 
