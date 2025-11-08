@@ -27,15 +27,58 @@ from pathlib import Path
 from urllib.parse import urlparse
 import http.client
 
+# Paths
+BASE_DIR = Path(__file__).parent
+MANIFEST_FILE = BASE_DIR / "manifest"
+
+
+def parse_manifest():
+    """Parse manifest file to extract app name and version."""
+    manifest_path = MANIFEST_FILE
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Manifest file not found: {manifest_path}")
+    
+    appname = None
+    major_version = None
+    minor_version = None
+    build_version = None
+    
+    with open(manifest_path, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            
+            if '=' in line:
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip()
+                
+                if key == "title":
+                    appname = value
+                elif key == "major_version":
+                    major_version = value
+                elif key == "minor_version":
+                    minor_version = value
+                elif key == "build_version":
+                    build_version = value
+    
+    if not appname:
+        raise ValueError("title not found in manifest")
+    if not all([major_version, minor_version, build_version]):
+        raise ValueError("Version information incomplete in manifest")
+    
+    version = f"{major_version}.{minor_version}.{build_version}"
+    return appname, version
+
+
 # Configuration
-APPNAME = "Hydravion"
-VERSION = "2.1.15"
+APPNAME, VERSION = parse_manifest()
 ROKU_DEV_TARGET = os.environ.get("ROKU_DEV_TARGET", "")
 DEVPASSWORD = os.environ.get("DEVPASSWORD", "")
 APP_KEY_PASS = os.environ.get("APP_KEY_PASS", "")  # Package signing password (from genkey)
 
-# Paths
-BASE_DIR = Path(__file__).parent
+# More paths (BASE_DIR already defined above)
 DIST_DIR = BASE_DIR / "dist"
 APPS_DIR = DIST_DIR / "apps"
 PKG_DIR = DIST_DIR / "packages"
