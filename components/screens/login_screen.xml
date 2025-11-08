@@ -14,6 +14,26 @@
       text = "Login"
       translation="[525,50]" />
 
+    <Label
+      id="serverStatusLabel"
+      font="font:SmallSystemFont"
+      horizAlign="center"
+      text="Server Status:"
+      translation="[900,210]"
+      width="300"
+      visible="true" />
+
+    <Poster
+      id="serverStatusIndicator"
+      width="20"
+      height="20"
+      loadWidth="52"
+      loadHeight="52"
+      uri="pkg:/images/status-red.png"
+      translation="[1130,212]"
+      visible="true"
+      loadDisplayMode="scaleToFit" />
+
     <Poster
       id="qrCode"
       width="300"
@@ -27,9 +47,29 @@
       font="font:SmallSystemFont"
       horizAlign="center"
       text=""
-      translation="[900,560]"
+      translation="[900,566]"
       width="300"
       visible="false" />
+
+    <Label
+      id="restartServerLabel"
+      font="font:SmallSystemFont"
+      horizAlign="center"
+      text="Restart Server"
+      translation="[900,566]"
+      width="300"
+      visible="false" />
+
+    <Poster
+      id="restartServerIcon"
+      uri="pkg:/images/replay.png"
+      width="20"
+      height="20"
+      loadWidth="20"
+      loadHeight="20"
+      translation="[1130,566]"
+      visible="false"
+      loadDisplayMode="scaleToFit" />
 
     <Label
       id="qrCodeInstructions"

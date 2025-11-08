@@ -10,6 +10,10 @@ function init()
   m.qrCode = m.top.findNode("qrCode")
   m.qrCodeUrl = m.top.findNode("qrCodeUrl")
   m.qrCodeInstructions = m.top.findNode("qrCodeInstructions")
+  m.serverStatusLabel = m.top.findNode("serverStatusLabel")
+  m.serverStatusIndicator = m.top.findNode("serverStatusIndicator")
+  m.restartServerLabel = m.top.findNode("restartServerLabel")
+  m.restartServerIcon = m.top.findNode("restartServerIcon")
 
   m.keyboard = m.top.findNode("inputKeyboard")
   m.keyboard.visible = false
@@ -117,6 +121,12 @@ sub startQRCodeFlow()
   m.qrCodeUrl.visible = true
   m.qrCodeInstructions.visible = true
   m.manualEntryButton.visible = true
+  ' Initialize server status to stopped
+  m.serverStatusIndicator.uri = "pkg:/images/status-red.png"
+  ' Initially show restart controls since server isn't running yet
+  m.qrCodeUrl.visible = false
+  m.restartServerLabel.visible = true
+  m.restartServerIcon.visible = true
   m.manualEntryButton.setFocus(true)
   
   ' Start cookie entry task
@@ -126,6 +136,7 @@ sub startQRCodeFlow()
   m.cookieTask.observeField("sailsSid", "onCookieReceived")
   m.cookieTask.observeField("status", "onCookieStatusChanged")
   m.cookieTask.observeField("error", "onCookieError")
+  m.cookieTask.observeField("serverRunning", "onServerStatusChanged")
   m.cookieTask.control = "RUN"
 end sub
 
@@ -200,6 +211,40 @@ sub onCookieError(obj)
   if error = "TIMEOUT"
     m.qrCodeInstructions.text = "Timeout - use manual entry instead"
   end if
+end sub
+
+sub onServerStatusChanged(obj)
+  isRunning = obj.getData()
+  if isRunning = true
+    m.serverStatusIndicator.uri = "pkg:/images/status-green.png"
+    ' Show server URL, hide restart controls
+    m.qrCodeUrl.visible = true
+    m.restartServerLabel.visible = false
+    m.restartServerIcon.visible = false
+    print "[PROGRESS] Server status updated: Running"
+  else
+    m.serverStatusIndicator.uri = "pkg:/images/status-red.png"
+    ' Hide server URL, show restart controls
+    m.qrCodeUrl.visible = false
+    m.restartServerLabel.visible = true
+    m.restartServerIcon.visible = true
+    print "[PROGRESS] Server status updated: Stopped"
+  end if
+end sub
+
+sub restartServer()
+  print "[PROGRESS] Restarting server"
+  ' Restart the cookie entry task to restart the web server
+  if m.cookieTask <> invalid
+    m.cookieTask.control = "STOP"
+    ' Wait a moment for the task to stop
+    sleep(200)
+  end if
+  ' Reset the QR flow flag so it can start again
+  m.qrFlowStarted = false
+  ' Start a new cookie entry task
+  startQRCodeFlow()
+  m.qrFlowStarted = true
 end sub
 
 sub onInputSailsCookie()
@@ -331,7 +376,13 @@ end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
   if press
-    if key = "play"
+    if key = "replay"
+      ' Instant replay button restarts the server when restart controls are visible
+      if m.restartServerIcon.visible = true
+        restartServer()
+        return true
+      end if
+    else if key = "play"
       ' Play button submits the cookie when keyboard is visible
       if m.keyboard.visible = true and m.field = "sailsSid"
         if m.keyboard.text <> ""

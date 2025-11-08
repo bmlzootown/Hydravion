@@ -7,6 +7,7 @@
     <field id="sailsSid" type="string" />
     <field id="status" type="string" />
     <field id="error" type="string" />
+    <field id="serverRunning" type="bool" value="false" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/cookieEntryTask.brs" />
 </component>

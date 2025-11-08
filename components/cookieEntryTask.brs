@@ -57,7 +57,14 @@ sub startLocalWebServer()
   m.webServer = createObject("roSGNode", "localWebServerTask")
   m.webServer.setField("port", 8888)
   m.webServer.observeField("sailsSid", "onCookieReceived")
+  m.webServer.observeField("isRunning", "onServerStatusChanged")
   m.webServer.control = "RUN"
+end sub
+
+sub onServerStatusChanged(obj)
+  isRunning = obj.getData()
+  m.top.serverRunning = isRunning
+  print "[PROGRESS] Server status changed: " + isRunning.ToStr()
 end sub
 
 sub onCookieReceived(obj)
