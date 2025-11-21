@@ -108,7 +108,6 @@ sub onReset()
   if m.top.reset = true
     ' Reset state
     m.showingManualEntry = false
-    m.keyboard.visible = false
     m.field = ""
     
     ' Clear the next field so it can trigger again
