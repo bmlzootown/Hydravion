@@ -76,7 +76,11 @@ sub onRowInput(obj)
   '? "onRowInputEvent: " + obj.getData()
 end sub
 
-' Login choice screen removed - no longer needed
+sub onRoInput(obj)
+  ' Handle roInputEvent from main.brs
+  ' Currently not implemented
+end sub
+
 
 sub onNext(obj)
   nextValue = m.login_screen.next
@@ -608,20 +612,8 @@ sub onProcessVideoSelected(obj)
 end sub
 
 sub onPreBuffer(obj)
-  'Setup videoplayer for prebuffering while user is on detail screen
-  'CURRENTLY NOT IN USE'
-  'registry = RegistryUtil()
-  'edge = registry.read("edge", "hydravion")
-  'm.details_screen.visible = false
-  'm.videoplayer.visible = true
-  'm.videoplayer.setFocus(true)
-  ''? obj.getData()
-  'm.selected_media.url = obj.getData().GetEntityEncode().Replace("&quot;","").DecodeUri()
-  '? m.selected_media.url
+  ' Setup details screen when user selects video
   m.videoplayer.content = m.selected_media
-  'm.videoplayer.visible = false
-  'm.videoplayer.setFocus(false)
-  'm.videoplayer.control = "prebuffer"
   m.details_screen.content = m.selected_media
   m.content_screen.visible = false
   m.details_screen.visible = true
@@ -1035,12 +1027,11 @@ sub handleResolutionsOptions()
 end sub
 
 sub handleMainOptions()
-  'Determines which option was selected on main screen'
+  ' Determines which option was selected on main screen
   if m.top.getScene().dialog.buttonSelected = 0
-    'getEdgeOptions()
     showLogoutDialog()
   else if m.top.getScene().dialog.buttonSelected = 1
-    'showLogoutDialog()
+    ' Additional option handler if needed
   end if
 end sub
 
