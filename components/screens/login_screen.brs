@@ -1,36 +1,56 @@
 function init()
   m.login_text = m.top.findNode("login_text")
-  m.login_text.font.size = 80
-
-  m.manualEntryButton = m.top.findNode("manualEntryButton")
-  m.manualEntryButton.observeField("buttonSelected","onManualEntryButton")
-
-  m.submitHint = m.top.findNode("submitHint")
+  m.login_text.font.size = 50
 
   m.qrCode = m.top.findNode("qrCode")
   m.qrCodeUrl = m.top.findNode("qrCodeUrl")
-  m.qrCodeInstructions = m.top.findNode("qrCodeInstructions")
-  m.serverStatusLabel = m.top.findNode("serverStatusLabel")
-  m.serverStatusIndicator = m.top.findNode("serverStatusIndicator")
-  m.restartServerLabel = m.top.findNode("restartServerLabel")
-  m.restartServerIcon = m.top.findNode("restartServerIcon")
+  m.expirationTimerLabel = m.top.findNode("expirationTimerLabel")
+  m.expirationTimer = m.top.findNode("expirationTimer")
+  m.orLabel = m.top.findNode("orLabel")
+  m.orLine = m.top.findNode("orLine")
+  m.orLine2 = m.top.findNode("orLine2")
+  m.manualEntryLabel = m.top.findNode("manualEntryLabel")
+  m.verificationUriBox = m.top.findNode("verificationUriBox")
+  m.verificationUriLabel = m.top.findNode("verificationUriLabel")
+  ' Set smaller font for URL to prevent truncation
+  if m.verificationUriLabel <> invalid
+    m.verificationUriLabel.font.size = 20
+  end if
+  m.enterCodeLabel = m.top.findNode("enterCodeLabel")
+  m.userCodeBox = m.top.findNode("userCodeBox")
+  m.userCodeLabel = m.top.findNode("userCodeLabel")
+  
+  ' Set horizAlignment programmatically to ensure it's applied
+  m.contentSectionWrapper = m.top.findNode("contentSectionWrapper")
+  if m.contentSectionWrapper <> invalid
+    m.contentSectionWrapper.horizAlignment = "center"
+  end if
+  m.contentSection = m.top.findNode("contentSection")
+  if m.contentSection <> invalid
+    m.contentSection.horizAlignment = "center"
+    m.contentSection.vertAlignment = "center"
+  end if
+  
+  ' Set vertAlignment and horizAlignment programmatically for dividerSection and manualEntrySection
+  m.dividerSection = m.top.findNode("dividerSection")
+  if m.dividerSection <> invalid
+    m.dividerSection.horizAlignment = "center"
+    m.dividerSection.vertAlignment = "center"
+  end if
+  m.manualEntrySection = m.top.findNode("manualEntrySection")
+  if m.manualEntrySection <> invalid
+    m.manualEntrySection.horizAlignment = "center"
+    m.manualEntrySection.vertAlignment = "center"
+  end if
+  
+  ' Center the labels inside manualEntrySection
+  if m.manualEntryLabel <> invalid
+    m.manualEntryLabel.horizAlign = "center"
+  end if
+  if m.enterCodeLabel <> invalid
+    m.enterCodeLabel.horizAlign = "center"
+  end if
 
-  m.keyboard = m.top.findNode("inputKeyboard")
-  m.keyboard.visible = false
-  m.field = ""
-
-  ' Store references to instruction labels for showing/hiding
-  m.instructions = m.top.findNode("instructions")
-  m.browserInstructions = m.top.findNode("browserInstructions")
-  m.instructionsList = m.top.findNode("instructionsList")
-  m.instructionsList2 = m.top.findNode("instructionsList2")
-  m.instructionsList3a = m.top.findNode("instructionsList3a")
-  m.instructionsList3b = m.top.findNode("instructionsList3b")
-  m.instructionsList4 = m.top.findNode("instructionsList4")
-  m.rokuAppHint = m.top.findNode("rokuAppHint")
-  m.rokuAppHint2 = m.top.findNode("rokuAppHint2")
-
-  m.sailsSid = ""
   m.showingManualEntry = false
   
   ' Timer to trigger next field change asynchronously
@@ -39,33 +59,40 @@ function init()
   m.nextTimer.duration = 0.1
   m.nextTimer.observeField("fire", "onNextTimerFire")
   
-  ' Observe reset field to restart QR code flow
+  ' Timer for countdown display
+  m.countdownTimer = createObject("roSGNode", "Timer")
+  m.countdownTimer.repeat = true
+  m.countdownTimer.duration = 1.0
+  m.countdownTimer.observeField("fire", "onCountdownTimerFire")
+  
+  ' Observe reset field to restart OAuth flow
   m.top.observeField("reset", "onReset")
   
-  ' Observe visible field to start QR code flow when screen becomes visible
+  ' Observe visible field to start OAuth flow when screen becomes visible
   m.top.observeField("visible", "onVisibleChanged")
   
-  ' Track if QR flow has been started to avoid starting it multiple times
-  m.qrFlowStarted = false
+  ' Track if OAuth flow has been started to avoid starting it multiple times
+  m.oauthFlowStarted = false
   
-  ' Start QR code flow if screen is already visible
+  ' Start OAuth flow if screen is already visible
   if m.top.visible = true
-    startQRCodeFlow()
-    m.qrFlowStarted = true
+    startOAuthFlow()
+    m.oauthFlowStarted = true
   end if
 end function
 
 sub onVisibleChanged(obj)
-  if m.top.visible = true and not m.qrFlowStarted
-    ' Screen became visible and QR flow hasn't started yet
-    startQRCodeFlow()
-    m.qrFlowStarted = true
+  if m.top.visible = true and not m.oauthFlowStarted
+    ' Screen became visible and OAuth flow hasn't started yet
+    startOAuthFlow()
+    m.oauthFlowStarted = true
   else if m.top.visible = false
-    ' Screen hidden - stop QR flow and reset flag
-    if m.cookieTask <> invalid
-      m.cookieTask.control = "STOP"
+    ' Screen hidden - stop OAuth flow and reset flag
+    if m.oauthTask <> invalid
+      m.oauthTask.control = "STOP"
     end if
-    m.qrFlowStarted = false
+    m.countdownTimer.control = "stop"
+    m.oauthFlowStarted = false
   end if
 end sub
 
@@ -80,64 +107,92 @@ end sub
 sub onReset()
   if m.top.reset = true
     ' Reset state
-    m.sailsSid = ""
     m.showingManualEntry = false
     m.keyboard.visible = false
     m.field = ""
     
-    ' Reset button text
-    m.manualEntryButton.text = "Manual Entry"
-    
-    ' Show QR code and instructions again
-    m.qrCode.visible = true
-    m.qrCodeUrl.visible = true
-    m.qrCodeInstructions.visible = true
-    showInstructions()
-    
     ' Clear the next field so it can trigger again
     m.top.next = ""
     
-    ' Stop existing cookie task if running
-    if m.cookieTask <> invalid
-      m.cookieTask.control = "STOP"
+    ' Stop existing OAuth task if running
+    if m.oauthTask <> invalid
+      m.oauthTask.control = "STOP"
     end if
+    m.countdownTimer.control = "stop"
     
-    ' Reset QR flow flag so it can start again
-    m.qrFlowStarted = false
+    ' Reset OAuth flow flag so it can start again
+    m.oauthFlowStarted = false
     
-    ' Restart QR code flow
-    startQRCodeFlow()
-    m.qrFlowStarted = true
+    ' Restart OAuth flow
+    startOAuthFlow()
+    m.oauthFlowStarted = true
     
     ' Reset the field
     m.top.reset = false
   end if
 end sub
 
-sub startQRCodeFlow()
+sub refreshQRCode()
+  print "[PROGRESS] Refreshing QR code"
+  ' Stop existing OAuth task if running
+  if m.oauthTask <> invalid
+    m.oauthTask.control = "STOP"
+  end if
+  m.countdownTimer.control = "stop"
+  
+  ' Switch back to timer view
+  m.expirationTimerLabel.text = "Time Remaining:"
+  m.expirationTimer.text = "--:--"
+  m.expirationTimerLabel.visible = true
+  m.expirationTimer.visible = true
+  
+  ' Clear manual entry fields temporarily
+  m.verificationUriLabel.text = ""
+  m.userCodeLabel.text = ""
+  m.orLabel.visible = false
+  m.orLine.visible = false
+  m.orLine2.visible = false
+  m.manualEntryLabel.visible = false
+  m.verificationUriBox.visible = false
+  m.verificationUriLabel.visible = false
+  m.enterCodeLabel.visible = false
+  m.userCodeBox.visible = false
+  m.userCodeLabel.visible = false
+  
+  ' Restart OAuth flow
+  m.oauthFlowStarted = false
+  startOAuthFlow()
+  m.oauthFlowStarted = true
+end sub
+
+sub startOAuthFlow()
   ' Show QR code by default
   m.showingManualEntry = false
   m.qrCode.visible = true
-  m.qrCodeUrl.visible = true
-  m.qrCodeInstructions.visible = true
-  m.manualEntryButton.visible = true
-  ' Initialize server status to stopped
-  m.serverStatusIndicator.uri = "pkg:/images/status-red.png"
-  ' Initially show restart controls since server isn't running yet
-  m.qrCodeUrl.visible = false
-  m.restartServerLabel.visible = true
-  m.restartServerIcon.visible = true
-  m.manualEntryButton.setFocus(true)
+  ' Show timer
+  m.expirationTimerLabel.text = "Time Remaining:"
+  m.expirationTimerLabel.visible = true
+  m.expirationTimer.visible = true
+  m.expirationTimer.text = "--:--"
+  m.orLabel.visible = false
+  m.orLine.visible = false
+  m.orLine2.visible = false
+  m.manualEntryLabel.visible = false
+  m.verificationUriBox.visible = false
+  m.verificationUriLabel.visible = false
+  m.enterCodeLabel.visible = false
+  m.userCodeBox.visible = false
+  m.userCodeLabel.visible = false
   
-  ' Start cookie entry task
-  m.cookieTask = createObject("roSGNode", "cookieEntryTask")
-  m.cookieTask.observeField("qrCodeUrl", "onQRCodeReady")
-  m.cookieTask.observeField("serverUrl", "onServerUrlReady")
-  m.cookieTask.observeField("sailsSid", "onCookieReceived")
-  m.cookieTask.observeField("status", "onCookieStatusChanged")
-  m.cookieTask.observeField("error", "onCookieError")
-  m.cookieTask.observeField("serverRunning", "onServerStatusChanged")
-  m.cookieTask.control = "RUN"
+  ' Start OAuth device flow task
+  m.oauthTask = createObject("roSGNode", "oauthDeviceTask")
+  m.oauthTask.observeField("qrCodeUrl", "onQRCodeReady")
+  m.oauthTask.observeField("userCode", "onUserCodeReady")
+  m.oauthTask.observeField("verificationUri", "onVerificationUriReady")
+  m.oauthTask.observeField("status", "onOAuthStatusChanged")
+  m.oauthTask.observeField("error", "onOAuthError")
+  m.oauthTask.observeField("expiresIn", "onExpiresInChanged")
+  m.oauthTask.control = "RUN"
 end sub
 
 
@@ -145,215 +200,92 @@ sub onQRCodeReady(obj)
   qrUrl = obj.getData()
   if qrUrl <> invalid and qrUrl <> ""
     m.qrCode.uri = qrUrl
-    m.qrCodeInstructions.text = "Scan the QR code to enter requisite cookie."
     print "[PROGRESS] QR code displayed"
   end if
 end sub
 
-sub onServerUrlReady(obj)
-  serverUrl = obj.getData()
-  if serverUrl <> invalid and serverUrl <> ""
-    m.qrCodeUrl.text = serverUrl
-    m.qrCodeUrl.visible = true
-    print "[PROGRESS] Server URL displayed: " + serverUrl
+sub onUserCodeReady(obj)
+  userCode = obj.getData()
+  if userCode <> invalid and userCode <> ""
+    m.userCodeLabel.text = userCode
+    print "[PROGRESS] User code: " + userCode
   end if
 end sub
 
-sub onCookieReceived(obj)
-  print "[PROGRESS] onCookieReceived called in login screen"
-  sailsSid = obj.getData()
-  if sailsSid <> invalid and sailsSid <> ""
-    if sailsSid.Len() > 20
-      print "[PROGRESS] sailsSid value: " + sailsSid.Left(20) + "..."
-    else
-      print "[PROGRESS] sailsSid value: " + sailsSid
-    end if
-    m.sailsSid = sailsSid
-    ' Store the cookie in registry
-    registry = RegistryUtil()
-    registry.write("sails", m.sailsSid, "hydravion")
-    print "[PROGRESS] Cookie stored in registry"
-    
-    ' Stop the cookie task (which will stop the web server)
-    if m.cookieTask <> invalid
-      ' The cookie task will stop the web server when it receives the cookie
-      print "[PROGRESS] Cookie task will stop web server"
-    end if
-    
-    print "[PROGRESS] sails.sid cookie received and stored, proceeding to main screen"
-    ' Don't clear the field - just set it directly with a unique value
-    ' Clearing it triggers the observer with empty value which we now ignore
-    time = CreateObject("roDateTime")
-    nextValue = "beep" + time.AsSeconds().ToStr()
-    print "[PROGRESS] About to set next field to: " + nextValue
-    print "[PROGRESS] Current next field value: " + m.top.next
-    m.top.next = nextValue
-    print "[PROGRESS] Set next field directly to: " + m.top.next
-    print "[PROGRESS] Next field InStr('beep') result: " + m.top.next.InStr("beep").ToStr()
-  else
-    print "[PROGRESS] sailsSid is invalid or empty"
+sub onVerificationUriReady(obj)
+  verificationUri = obj.getData()
+  if verificationUri <> invalid and verificationUri <> ""
+    m.verificationUriLabel.text = verificationUri
+    m.orLabel.visible = true
+    m.orLine.visible = true
+    m.orLine2.visible = true
+    m.manualEntryLabel.visible = true
+    m.verificationUriBox.visible = true
+    m.verificationUriLabel.visible = true
+    m.enterCodeLabel.visible = true
+    m.userCodeBox.visible = true
+    m.userCodeLabel.visible = true
+    print "[PROGRESS] Verification URI: " + verificationUri
   end if
 end sub
 
-sub onCookieStatusChanged(obj)
+sub onOAuthStatusChanged(obj)
   status = obj.getData()
   if status = "QR_CODE_READY"
-    m.qrCodeInstructions.text = "Scan the QR code to enter requisite cookie."
-  else if status = "COOKIE_RECEIVED"
-    m.qrCodeInstructions.text = "Cookie received! Logging in..."
-  else if status = "TIMEOUT"
-    m.qrCodeInstructions.text = "Timeout - use manual entry instead"
+    m.countdownTimer.control = "start"
+    ' Show timer
+    m.expirationTimerLabel.visible = true
+    m.expirationTimer.visible = true
+  else if status = "AUTHENTICATED"
+    m.countdownTimer.control = "stop"
+    m.expirationTimer.text = ""
+    m.expirationTimerLabel.visible = false
+    m.expirationTimer.visible = false
+    ' Proceed to main screen
+    time = CreateObject("roDateTime")
+    nextValue = "beep" + time.AsSeconds().ToStr()
+    m.top.next = nextValue
+    print "[PROGRESS] OAuth authentication complete, proceeding to main screen"
   end if
 end sub
 
-sub onCookieError(obj)
+sub onOAuthError(obj)
   error = obj.getData()
-  if error = "TIMEOUT"
-    m.qrCodeInstructions.text = "Timeout - use manual entry instead"
+  if error = "TIMEOUT" or error = "EXPIRED"
+    m.countdownTimer.control = "stop"
+    ' Automatically refresh QR code
+    refreshQRCode()
+  else if error <> invalid and error <> ""
+    m.countdownTimer.control = "stop"
+    ' Automatically refresh QR code
+    refreshQRCode()
   end if
 end sub
 
-sub onServerStatusChanged(obj)
-  isRunning = obj.getData()
-  if isRunning = true
-    m.serverStatusIndicator.uri = "pkg:/images/status-green.png"
-    ' Show server URL, hide restart controls
-    m.qrCodeUrl.visible = true
-    m.restartServerLabel.visible = false
-    m.restartServerIcon.visible = false
-    print "[PROGRESS] Server status updated: Running"
-  else
-    m.serverStatusIndicator.uri = "pkg:/images/status-red.png"
-    ' Hide server URL, show restart controls
-    m.qrCodeUrl.visible = false
-    m.restartServerLabel.visible = true
-    m.restartServerIcon.visible = true
-    print "[PROGRESS] Server status updated: Stopped"
+sub onExpiresInChanged(obj)
+  expiresIn = obj.getData()
+  if expiresIn <> invalid and expiresIn <> ""
+    m.expiresInSeconds = Val(expiresIn)
   end if
 end sub
 
-sub restartServer()
-  print "[PROGRESS] Restarting server"
-  ' Restart the cookie entry task to restart the web server
-  if m.cookieTask <> invalid
-    m.cookieTask.control = "STOP"
-    ' Wait a moment for the task to stop
-    sleep(200)
+sub onCountdownTimerFire()
+  if m.expiresInSeconds <> invalid
+    if m.expiresInSeconds > 0
+      minutes = m.expiresInSeconds \ 60
+      seconds = m.expiresInSeconds mod 60
+      timeText = minutes.ToStr() + ":" + Right("0" + seconds.ToStr(), 2)
+      m.expirationTimer.text = timeText
+      m.expiresInSeconds = m.expiresInSeconds - 1
+    else
+      m.countdownTimer.control = "stop"
+      ' Automatically refresh QR code when timer expires
+      refreshQRCode()
+    end if
   end if
-  ' Reset the QR flow flag so it can start again
-  m.qrFlowStarted = false
-  ' Start a new cookie entry task
-  startQRCodeFlow()
-  m.qrFlowStarted = true
 end sub
 
-sub onInputSailsCookie()
-  m.field = "sailsSid"
-  ' Clear the keyboard text
-  m.keyboard.text = ""
-  m.keyboard.textEditBox.text = ""
-  m.keyboard.textEditBox.secureMode = false
-  ' Set a high max text length to allow long cookie values
-  m.keyboard.maxTextLength = 1000
-  if m.keyboard.textEditBox <> invalid
-    m.keyboard.textEditBox.maxTextLength = 1000
-  end if
-  m.keyboard.visible = true
-  ' Show the submit hint above the keyboard
-  m.submitHint.visible = true
-  m.keyboard.setFocus(true)
-  ' Hide the "Enter your sails.sid" line and move everything up to that position
-  ' Store original positions if not already stored
-  if m.originalPositions = invalid
-    m.originalPositions = {
-      instructions: m.instructions.translation[1],
-      browserInstructions: m.browserInstructions.translation[1],
-      instructionsList: m.instructionsList.translation[1],
-      instructionsList2: m.instructionsList2.translation[1],
-      instructionsList3a: m.instructionsList3a.translation[1],
-      instructionsList3b: m.instructionsList3b.translation[1],
-      instructionsList4: m.instructionsList4.translation[1],
-      rokuAppHint: m.rokuAppHint.translation[1],
-      rokuAppHint2: m.rokuAppHint2.translation[1]
-    }
-  end if
-  ' Hide the main instruction line
-  m.instructions.visible = false
-  ' Move "How to get it" section to y=150 and all subsequent lines up relative to it
-  ' Calculate the offset needed to move browserInstructions from its original position to y=150
-  targetY = 150
-  offset = targetY - m.originalPositions.browserInstructions
-  print "[PROGRESS] Moving instructions up, offset: " + offset.ToStr() + ", targetY: " + targetY.ToStr()
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 200
-  newPos[1] = targetY
-  m.browserInstructions.translation = newPos
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 220
-  newPos[1] = m.originalPositions.instructionsList + offset
-  m.instructionsList.translation = newPos
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 220
-  newPos[1] = m.originalPositions.instructionsList2 + offset
-  m.instructionsList2.translation = newPos
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 220
-  newPos[1] = m.originalPositions.instructionsList3a + offset
-  m.instructionsList3a.translation = newPos
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 220
-  newPos[1] = m.originalPositions.instructionsList3b + offset
-  m.instructionsList3b.translation = newPos
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 220
-  newPos[1] = m.originalPositions.instructionsList4 + offset
-  m.instructionsList4.translation = newPos
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 200
-  newPos[1] = m.originalPositions.rokuAppHint + offset
-  m.rokuAppHint.translation = newPos
-  
-  newPos = createObject("roArray", 2, false)
-  newPos[0] = 200
-  newPos[1] = m.originalPositions.rokuAppHint2 + offset
-  m.rokuAppHint2.translation = newPos
-  ' Hide the button since keyboard is shown
-  m.manualEntryButton.visible = false
-end sub
-
-sub onManualEntryButton()
-  ' User clicked "Manual Entry" - go directly to keyboard input
-  m.showingManualEntry = true
-  m.qrCode.visible = false
-  m.qrCodeUrl.visible = false
-  m.qrCodeInstructions.visible = false
-  onInputSailsCookie()
-end sub
-
-
-sub performLogin()
-  if m.sailsSid = ""
-    showErrorDialog("Please enter your sails.sid cookie first")
-    return
-  end if
-  
-  ' Store the cookie in registry
-  registry = RegistryUtil()
-  registry.write("sails", m.sailsSid, "hydravion")
-  
-  print "[PROGRESS] sails.sid cookie stored, proceeding to main screen"
-  ' Clear the next field first
-  m.top.next = ""
-  ' Use timer to set next field asynchronously to ensure observer fires
-  m.nextTimer.control = "start"
-end sub
+' Manual entry removed - OAuth device flow only
 
 sub showErrorDialog(msg)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
@@ -375,110 +307,8 @@ sub setupDialogPalette()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
-  if press
-    if key = "replay"
-      ' Instant replay button restarts the server when restart controls are visible
-      if m.restartServerIcon.visible = true
-        restartServer()
-        return true
-      end if
-    else if key = "play"
-      ' Play button submits the cookie when keyboard is visible
-      if m.keyboard.visible = true and m.field = "sailsSid"
-        if m.keyboard.text <> ""
-          m.sailsSid = m.keyboard.text
-          m.keyboard.visible = false
-          m.submitHint.visible = false
-          ' Show instructions again
-          showInstructions()
-          ' Perform login after entering cookie
-          performLogin()
-        else
-          m.keyboard.visible = false
-          m.submitHint.visible = false
-          ' Show instructions again
-          showInstructions()
-          ' Go back to main screen if no text entered
-          m.showingManualEntry = false
-          m.qrCode.visible = true
-          m.qrCodeUrl.visible = true
-          m.qrCodeInstructions.visible = true
-          m.manualEntryButton.setFocus(true)
-        end if
-        return true
-      end if
-    else if key = "back"
-      if m.keyboard.visible = true
-        if m.field = "sailsSid"
-          if m.keyboard.text <> ""
-            m.sailsSid = m.keyboard.text
-          end if
-          m.keyboard.visible = false
-          m.submitHint.visible = false
-          ' Show instructions again
-          showInstructions()
-          ' Go back to main screen
-          m.showingManualEntry = false
-          m.qrCode.visible = true
-          m.qrCodeUrl.visible = true
-          m.qrCodeInstructions.visible = true
-          m.manualEntryButton.setFocus(true)
-          return true
-        end if
-      end if
-    end if
+  ' No key handling needed - auto-refresh handles everything
   return false
-  end if
 end function
 
-sub showInstructions()
-  ' Show the main instruction line again
-  m.instructions.visible = true
-  ' Hide submit hint
-  m.submitHint.visible = false
-  ' Restore original positions when keyboard is hidden
-  if m.originalPositions <> invalid
-    print "[PROGRESS] Restoring instructions to original positions"
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 200
-    newPos[1] = m.originalPositions.browserInstructions
-    m.browserInstructions.translation = newPos
-    
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 220
-    newPos[1] = m.originalPositions.instructionsList
-    m.instructionsList.translation = newPos
-    
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 220
-    newPos[1] = m.originalPositions.instructionsList2
-    m.instructionsList2.translation = newPos
-    
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 220
-    newPos[1] = m.originalPositions.instructionsList3a
-    m.instructionsList3a.translation = newPos
-    
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 220
-    newPos[1] = m.originalPositions.instructionsList3b
-    m.instructionsList3b.translation = newPos
-    
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 220
-    newPos[1] = m.originalPositions.instructionsList4
-    m.instructionsList4.translation = newPos
-    
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 200
-    newPos[1] = m.originalPositions.rokuAppHint
-    m.rokuAppHint.translation = newPos
-    
-    newPos = createObject("roArray", 2, false)
-    newPos[0] = 200
-    newPos[1] = m.originalPositions.rokuAppHint2
-    m.rokuAppHint2.translation = newPos
-  end if
-  ' Show the button again
-  m.manualEntryButton.visible = true
-end sub
+' Old showInstructions function removed - no longer needed

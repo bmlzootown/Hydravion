@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<component name="login_screen" extends="group" initialFocus="manualEntryButton">
+<component name="login_screen" extends="group">
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
   <interface>
     <field id="next" type="string" />
@@ -7,175 +7,190 @@
     <field id="reset" type="boolean" />
   </interface>
   <children>
-    <Label
-      id="login_text"
-      font="font:LargeBoldSystemFont"
+    <!-- Main container LayoutGroup -->
+    <LayoutGroup
+      id="mainContainer"
+      layoutDirection="vert"
       horizAlign="center"
-      text = "Login"
-      translation="[525,50]" />
-
-    <Label
-      id="serverStatusLabel"
-      font="font:SmallSystemFont"
-      horizAlign="center"
-      text="Server Status:"
-      translation="[900,210]"
-      width="300"
-      visible="true" />
-
-    <Poster
-      id="serverStatusIndicator"
-      width="20"
-      height="20"
-      loadWidth="52"
-      loadHeight="52"
-      uri="pkg:/images/status-red.png"
-      translation="[1130,212]"
-      visible="true"
-      loadDisplayMode="scaleToFit" />
-
-    <Poster
-      id="qrCode"
-      width="300"
-      height="300"
-      translation="[900,250]"
-      visible="true"
-      loadDisplayMode="scaleToFit" />
-
-    <Label
-      id="qrCodeUrl"
-      font="font:SmallSystemFont"
-      horizAlign="center"
-      text=""
-      translation="[900,566]"
-      width="300"
-      visible="false" />
-
-    <Label
-      id="restartServerLabel"
-      font="font:SmallSystemFont"
-      horizAlign="center"
-      text="Restart Server"
-      translation="[900,566]"
-      width="300"
-      visible="false" />
-
-    <Poster
-      id="restartServerIcon"
-      uri="pkg:/images/replay.png"
-      width="20"
-      height="20"
-      loadWidth="20"
-      loadHeight="20"
-      translation="[1130,566]"
-      visible="false"
-      loadDisplayMode="scaleToFit" />
-
-    <Label
-      id="qrCodeInstructions"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="Scan the QR code to enter requisite cookie."
-      translation="[200,220]"
-      width="600"
-      visible="true" />
-
-    <Label
-      id="instructions"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="You can also visit the url below the QR code."
-      translation="[200,260]"
-      width="600" />
-
-    <Label
-      id="browserInstructions"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="How to get cookie:"
-      translation="[200,300]"
-      width="600" />
-
-    <Label
-      id="instructionsList"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="1. Login to floatplane.com"
-      translation="[220,330]"
-      width="600" />
-
-    <Label
-      id="instructionsList2"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="2. Open DevTools (F12)"
-      translation="[220,360]"
-      width="600" />
-
-    <Label
-      id="instructionsList3a"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="3. Go to Application (Chrome) or Storage (Firefox)"
-      translation="[220,390]"
-      width="600" />
-
-    <Label
-      id="instructionsList3b"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="    > Cookies > floatplane.com"
-      translation="[220,420]"
-      width="600" />
-
-    <Label
-      id="instructionsList4"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="4. Copy the value of sails.sid and paste in browser"
-      translation="[220,450]"
-      width="600" />
-
-    <Label
-      id="rokuAppHint"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="Tip for Manual Entry: Use the Roku app on your phone or"
-      translation="[200,490]"
-      width="600" />
-
-    <Label
-      id="rokuAppHint2"
-      font="font:SmallSystemFont"
-      horizAlign="left"
-      text="devtools.web.roku.com/RokuRemote for easier entry"
-      translation="[200,517]"
-      width="600" />
-
-    <Button
-      id="manualEntryButton"
-      iconUri=""
-      focusedIconUri=""
-      textColor="0xFFFFFF"
-      height="75"
-      focusedTextColor="0x111111"
-      text="Manual Entry"
-      translation="[200,560]" />
-
-    <Label
-      id="submitHint"
-      font="font:MediumBoldSystemFont"
-      horizAlign="right"
-      text="Press Play to Submit"
-      translation="[700,340]"
-      width="400"
-      visible="false" />
-
-    <Keyboard
-      id="inputKeyboard"
-      text=""
-      focusedKeyColor="0xFFFFFFFF"
-      translation="[169,417]" />
+      vertAlign="top"
+      translation="[40,80]"
+      itemSpacings="[100]">
+      
+      <!-- Header section -->
+      <LayoutGroup
+        id="headerSection"
+        layoutDirection="vert"
+        horizAlign="center"
+        vertAlign="top"
+        itemSpacings="[0]">
+        <Label
+          id="login_text"
+          font="font:LargeBoldSystemFont"
+          horizAlign="center"
+          text="Scan the QR code or use the URL to login:"
+          width="1200" />
+      </LayoutGroup>
+      
+      <!-- Content section: QR code and manual entry side by side -->
+      <!-- Use LayoutGroup with 1200px invisible Label to force width (exactly like headerSection) -->
+      <LayoutGroup
+        id="contentSectionWrapper"
+        layoutDirection="vert"
+        horizAlign="center"
+        vertAlign="top"
+        itemSpacings="[0]">
+        <!-- Invisible 1200px Label to force width (exactly matching headerSection pattern) -->
+        <Label
+          width="1200"
+          height="1"
+          text=""
+          visible="false" />
+        <LayoutGroup
+          id="contentSection"
+          layoutDirection="horiz"
+          horizAlign="center"
+          vertAlign="center"
+          itemSpacings="[60]">
+          
+          <!-- Left column: QR code section -->
+          <LayoutGroup
+            id="qrCodeSection"
+            layoutDirection="vert"
+            horizAlign="center"
+            vertAlign="center"
+            itemSpacings="[20]">
+            <Poster
+              id="qrCode"
+              width="300"
+              height="300"
+              visible="true"
+              loadDisplayMode="scaleToFit" />
+            
+            <!-- Timer section -->
+            <LayoutGroup
+              id="timerSection"
+              layoutDirection="horiz"
+              horizAlign="center"
+              vertAlign="center"
+              itemSpacings="[10]">
+              <Label
+                id="expirationTimerLabel"
+                font="font:SmallSystemFont"
+                horizAlign="left"
+                text="Time Remaining:"
+                width="200"
+                visible="true" />
+              <Label
+                id="expirationTimer"
+                font="font:SmallSystemFont"
+                horizAlign="right"
+                text="--:--"
+                width="100"
+                visible="true" />
+            </LayoutGroup>
+          </LayoutGroup>
+          
+          <!-- Middle: Divider section -->
+          <LayoutGroup
+            id="dividerSection"
+            layoutDirection="vert"
+            horizAlign="center"
+            vertAlign="center"
+            itemSpacings="[15]">
+            <Rectangle
+              id="orLine"
+              width="2"
+              height="60"
+              color="0xFFFFFFFF"
+              translation="[24,-45]"
+              visible="true" />
+            <Label
+              id="orLabel"
+              font="font:SmallSystemFont"
+              horizAlign="center"
+              vertAlign="center"
+              text="OR"
+              width="50"
+              height="30"
+              translation="[0,0]"
+              visible="true" />
+            <Rectangle
+              id="orLine2"
+              width="2"
+              height="60"
+              color="0xFFFFFFFF"
+              translation="[24,15]"
+              visible="true" />
+          </LayoutGroup>
+          
+          <!-- Right column: Manual entry section -->
+          <LayoutGroup
+            id="manualEntrySection"
+            layoutDirection="vert"
+            horizAlign="center"
+            vertAlign="center"
+            itemSpacings="[15]">
+            <Label
+              id="manualEntryLabel"
+              font="font:SmallSystemFont"
+              horizAlign="center"
+              text="Using a browser, go to"
+              width="500"
+              visible="true" />
+            
+            <!-- Verification URI box with label overlay -->
+            <Group>
+              <Rectangle
+                id="verificationUriBox"
+                width="580"
+                height="40"
+                color="0x333333FF"
+                visible="false" />
+              <Label
+                id="verificationUriLabel"
+                font="font:SmallSystemFont"
+                horizAlign="center"
+                vertAlign="center"
+                text=""
+                width="580"
+                height="40"
+                translation="[0,0]"
+                wrap="true"
+                maxLines="2"
+                visible="false" />
+            </Group>
+            
+            <Label
+              id="enterCodeLabel"
+              font="font:SmallSystemFont"
+              horizAlign="center"
+              text="and enter this code"
+              width="500"
+              visible="true" />
+            
+            <!-- User code box with label overlay -->
+            <Group>
+              <Rectangle
+                id="userCodeBox"
+                width="200"
+                height="40"
+                color="0x333333FF"
+                visible="false" />
+              <Label
+                id="userCodeLabel"
+                font="font:SmallSystemFont"
+                horizAlign="center"
+                vertAlign="center"
+                text=""
+                width="200"
+                height="40"
+                translation="[0,0]"
+                visible="false" />
+            </Group>
+          </LayoutGroup>
+        </LayoutGroup>
+      </LayoutGroup>
+    </LayoutGroup>
   </children>
   <script type="text/brightscript" uri="pkg:/components/screens/login_screen.brs" />
 </component>
