@@ -8,3 +8,4 @@ dist*
 out*
 components/pasteyTask.brs
 components/pasteyTask.xml
+openid-configuration.json
