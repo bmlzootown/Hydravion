@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="setupChannelsTask" extends="task" >
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <script type="text/brightscript" uri="pkg:/components/tokenUtil.brs" />
+  <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
     <interface>
       <field id="unparsed" type="string" />
       <field id="category_node" type="node" />

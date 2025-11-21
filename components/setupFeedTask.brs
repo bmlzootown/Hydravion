@@ -108,7 +108,8 @@ function request()
     m.postercontent.appendChild(node)
   end for
   getProgress = CreateObject("roSGNode", "postTask")
-  url = "https://www.floatplane.com/api/v3/content/get/progress"
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/content/get/progress")
   getProgress.setField("url", url)
   getProgress.setField("body", vidIds)
   getProgress.observeField("response", "gotProgress")
@@ -127,6 +128,7 @@ function request()
   m.postercontent.appendChild(node)
 
   'm.top.feed = postercontent
+  return ""
 end function
 
 sub gotProgress(obj)
@@ -153,11 +155,14 @@ end sub
 function loadCacheImage(url) as String
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
-  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+  useragent = "Hydravion (Roku) v" + version
 
-  registry = RegistryUtil()
-  sails = registry.read("sails", "hydravion")
-  cookies = "sails.sid=" + sails
+  ' Get Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    return url
+  end if
 
   fs = createObject("roFileSystem")
   xfer = createObject("roUrlTransfer")
@@ -165,7 +170,7 @@ function loadCacheImage(url) as String
   xfer.InitClientCertificates()
   xfer.AddHeader("Accept", "application/json")
   xfer.AddHeader("User-Agent", useragent)
-  xfer.AddHeader("Cookie", cookies)
+  xfer.AddHeader("Authorization", "Bearer " + accessToken)
 
   filename = url
   filename = mid(filename, instr(1, filename, "//") + 1)

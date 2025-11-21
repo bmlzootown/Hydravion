@@ -32,11 +32,12 @@ function init()
 
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
-  m.useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+  m.useragent = "Hydravion (Roku) v" + version
 
-  registry = RegistryUtil()
-  if registry.read("sails", "hydravion") <> invalid then
-    'Check whether cookies are set, if not we login. If found, we head over to onNext()
+  ' Check for Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  if tokenUtilObj.isAuthenticated() then
+    'Check whether token is set, if not we login. If found, we head over to onNext()
     m.login_screen.visible = false
     ' Set next field to trigger the login flow (onNext checks for "beep" prefix)
     time = CreateObject("roDateTime")
@@ -45,7 +46,7 @@ function init()
     'Signal that we are logged in and we have completed launch
     'm.top.signalBeacon("AppDialogComplete")
   else
-    ' No cookies, show login screen directly
+    ' No token, show login screen directly
     m.login_screen.visible = true
     m.login_screen.setFocus(true)
   end if
@@ -107,7 +108,8 @@ end sub
 
 sub getSubs(obj)
   m.subs_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v3/user/subscriptions"
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/user/subscriptions")
   m.subs_task.setField("url", url)
   m.subs_task.observeField("response", "onSubs")
   m.subs_task.observeField("error", "onRequestError")
@@ -154,7 +156,8 @@ sub onCategorySelected(obj)
   'Grab stream info
   m.stream_cdn = CreateObject("roSGNode", "urlTask")
   if item.liveInfo <> invalid
-    url = "https://www.floatplane.com/api/v3/delivery/info?scenario=live&entityId=" + item.liveInfo.id
+    apiConfigObj = ApiConfig()
+    url = apiConfigObj.buildApiUrl("/api/v3/delivery/info?scenario=live&entityId=" + item.liveInfo.id)
     
     m.stream_cdn.setField("url", url)
     m.stream_cdn.observeField("response", "onGetStreamURL")
@@ -190,7 +193,8 @@ sub onChannelSelected(obj)
 
   'Grab stream info
   m.stream_cdn = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=live&entityId=" + liveInfoID
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/delivery/info?scenario=live&entityId=" + liveInfoID)
   m.stream_cdn.setField("url", url)
   m.stream_cdn.observeField("response", "onGetStreamURL")
   m.stream_cdn.observeField("error", "onGotStreamError")
@@ -208,7 +212,8 @@ sub onGetStreamURL(obj)
   m.streamUri = cdn + uri
 
   m.stream_info = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/creator/info?creatorGUID=" + m.creatorGUID
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/creator/info?creatorGUID=" + m.creatorGUID)
   m.stream_info.setField("url", url)
   m.stream_info.observeField("response", "onGetStreamInfo")
   m.stream_info.control = "RUN"
@@ -346,7 +351,8 @@ sub onContentSelected(obj)
   else
     m.live = false
     gpi = CreateObject("roSGNode", "urlTask")
-    url = "https://www.floatplane.com/api/v3/content/post?id=" + m.selected_media.postId
+    apiConfigObj = ApiConfig()
+    url = apiConfigObj.buildApiUrl("/api/v3/content/post?id=" + m.selected_media.postId)
     gpi.setField("url", url)
     gpi.observeField("response", "onPostInfo")
     gpi.observeField("error", "onRequestError")
@@ -376,7 +382,8 @@ sub onPostInfo(obj)
     ' Skip the old /api/video/info endpoint and go directly to getting delivery info
     ' We'll extract resolution info from the delivery/info response
     getProgress = CreateObject("roSGNode", "postTask")
-    url = "https://www.floatplane.com/api/v3/content/get/progress"
+    apiConfigObj = ApiConfig()
+    url = apiConfigObj.buildApiUrl("/api/v3/content/get/progress")
     data = {
       "ids":[m.selected_media.guid],
       "contentType": "video"
@@ -396,15 +403,72 @@ sub onPostInfo(obj)
 end sub
 
 sub onRequestError(obj)
-  error = ParseJSON(obj.getData())
+  errorData = obj.getData()
+  
+  ' Check if it's a plain string error (like "Not authenticated - please login")
+  if type(errorData) = "roString" or type(errorData) = "String"
+    ' Check if it's an authentication error
+    if errorData.InStr("Not authenticated") >= 0 or errorData.InStr("please login") >= 0
+      print "[ERROR] Authentication failed, redirecting to login screen"
+      ' Redirect to login screen
+      m.category_screen.visible = false
+      m.content_screen.visible = false
+      m.details_screen.visible = false
+      m.login_screen.visible = true
+      m.login_screen.setFocus(true)
+      ' Re-establish observer in case it was lost
+      m.login_screen.observeField("next", "onNext")
+      ' Reset the login screen to restart QR code flow
+      m.login_screen.setField("reset", true)
+      return
+    else
+      ' Other string error, show as message
+      showMessageDialog("Error", errorData)
+      return
+    end if
+  end if
+  
+  ' Try to parse as JSON
+  error = ParseJSON(errorData)
+  
+  ' Check if JSON parsing failed
+  if error = invalid
+    ' Not valid JSON, show as plain text
+    showMessageDialog("Error", errorData)
+    return
+  end if
+  
   ' Store error info for closeDialog to check
   m.lastError = error
-  showMessageDialog(error.errors[0].name, error.errors[0].message)
-end sub
-
-sub onVideoSelectedSetup(obj)
-  ' This function is no longer used - we skip the old video/info endpoint
-  ' Resolution info is now extracted from delivery/info in onProcessVideoSelected
+  
+  ' Check if it's a structured error with errors array
+  if error.errors <> invalid and error.errors.Count() > 0
+    ' Check if it's an authentication error
+    if error.errors[0].name <> invalid and (error.errors[0].name = "notLoggedInError" or error.errors[0].name.InStr("auth") >= 0)
+      print "[ERROR] Authentication error from API, redirecting to login screen"
+      ' Redirect to login screen
+      m.category_screen.visible = false
+      m.content_screen.visible = false
+      m.details_screen.visible = false
+      m.login_screen.visible = true
+      m.login_screen.setFocus(true)
+      ' Re-establish observer in case it was lost
+      m.login_screen.observeField("next", "onNext")
+      ' Reset the login screen to restart QR code flow
+      m.login_screen.setField("reset", true)
+      return
+    end if
+    
+    ' Other structured error, show dialog
+    errorName = error.errors[0].name
+    if errorName = invalid then errorName = "Error"
+    errorMessage = error.errors[0].message
+    if errorMessage = invalid then errorMessage = "An error occurred"
+    showMessageDialog(errorName, errorMessage)
+  else
+    ' Error object but no errors array, show generic message
+    showMessageDialog("Error", "An error occurred")
+  end if
 end sub
 
 sub gotProgress(obj)
@@ -422,7 +486,8 @@ end sub
 
 sub doPreProcessVideoSelected()
   m.video_pre_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid)
   m.video_pre_task.setField("url", url)
   m.video_pre_task.observeField("response", "onProcessVideoSelected")
   m.video_pre_task.observeField("error", "onRequestError")
@@ -574,7 +639,8 @@ sub onAttachedMediaSelected(obj)
   m.attached_media = m.details_screen.findNode("attachmentsList").content.getChild(obj.getData())
 
   attachmentTask = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.attached_media.guid
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/delivery/info?scenario=onDemand&entityId=" + m.attached_media.guid)
   attachmentTask.setField("url", url)
   attachmentTask.observeField("response", "onProcessAttachedMedia")
   m.playButtonPressed = true
@@ -738,7 +804,8 @@ end sub
 
 sub setProgress(contentType as String, guid as String, position as Integer)
   videoProgress = CreateObject("roSGNode", "postTask")
-  url = "https://www.floatplane.com/api/v3/content/progress"
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/content/progress")
   data = {
     "id": guid,
     "contentType": contentType,
@@ -766,16 +833,19 @@ sub updateSelectedMediaProgressBar(position as Integer)
 end sub
 
 sub initializeVideoPlayer()
-  'Setup video player with proper cookies
-  registry = RegistryUtil()
-  sails = registry.read("sails", "hydravion")
-  cookies = "sails.sid=" + sails
+  'Setup video player with Bearer token
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    print "[PROGRESS] No access token available for video player"
+    return
+  end if
   m.videoplayer.EnableCookies()
   m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
   m.videoplayer.initClientCertificates()
   m.videoplayer.SetConnectionTimeout(30)
   m.videoplayer.AddHeader("User-Agent", m.useragent)
-  m.videoplayer.AddHeader("Cookie", cookies)
+  m.videoplayer.AddHeader("Authorization", "Bearer " + accessToken)
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
   m.videoplayer.observeField("state", "onPlayerStateChanged")
@@ -924,7 +994,8 @@ end sub
 sub makeResolutionsOptions()
   'Grab resolutions available for the video
   m.res_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/delivery/info?scenario=onDemand&entityId=" + m.selected_media.guid)
   m.res_task.setField("url", url)
   m.res_task.observeField("response", "showResolutionsOptions")
   m.res_task.control = "RUN"

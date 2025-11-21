@@ -23,9 +23,10 @@ function request()
   for each subscription in trimmed
     creator = ParseJSON(getCreatorInfo(subscription.creator))
 
+    apiConfigObj = ApiConfig()
     node = createObject("roSGNode", "category_node")
     node.title = creator.title
-    node.feed_url = "https://www.floatplane.com/api/v3/content/creator?id=" + subscription.creator
+    node.feed_url = apiConfigObj.buildApiUrl("/api/v3/content/creator?id=" + subscription.creator)
     node.creatorGUID = subscription.creator
     node.liveInfo = creator.liveStream
     node.icon = loadCacheImage(creator.icon.path)
@@ -41,23 +42,29 @@ function request()
   end for
 
   m.top.category_node = contentNode
+  return ""
 end function
 
 function getCreatorInfo(creator) as String
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
-  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+  useragent = "Hydravion (Roku) v" + version
 
-  registry = RegistryUtil()
-  sails = registry.read("sails", "hydravion")
-  cookies = "sails.sid=" + sails
+  ' Get Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    return ""
+  end if
+
   xfer = CreateObject("roUrlTransfer")
   xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
   xfer.AddHeader("Accept", "application/json")
   xfer.AddHeader("User-Agent", useragent)
-  xfer.AddHeader("Cookie", cookies)
+  xfer.AddHeader("Authorization", "Bearer " + accessToken)
   xfer.initClientCertificates()
-  xfer.SetUrl("https://www.floatplane.com/api/v3/creator/info?id=" + creator)
+  apiConfigObj = ApiConfig()
+  xfer.SetUrl(apiConfigObj.buildApiUrl("/api/v3/creator/info?id=" + creator))
 
   return xfer.GetToString()
 end function
@@ -65,18 +72,23 @@ end function
 function getImageUrl(creator) as String
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
-  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+  useragent = "Hydravion (Roku) v" + version
 
-  registry = RegistryUtil()
-  sails = registry.read("sails", "hydravion")
-  cookies = "sails.sid=" + sails
+  ' Get Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    return ""
+  end if
+
   xfer = CreateObject("roUrlTransfer")
   xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
   xfer.AddHeader("Accept", "application/json")
   xfer.AddHeader("User-Agent", useragent)
-  xfer.AddHeader("Cookie", cookies)
+  xfer.AddHeader("Authorization", "Bearer " + accessToken)
   xfer.initClientCertificates()
-  xfer.SetUrl("https://www.floatplane.com/api/v3/creator/info?id=" + creator)
+  apiConfigObj = ApiConfig()
+  xfer.SetUrl(apiConfigObj.buildApiUrl("/api/v3/creator/info?id=" + creator))
   subInfo = ParseJSON(xfer.GetToString())
 
   if subInfo[0].cover.childImages[0].path <> invalid
@@ -88,12 +100,14 @@ end function
 function loadCacheImage(url) as String
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
-  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+  useragent = "Hydravion (Roku) v" + version
 
-  registry = RegistryUtil()
-
-  sails = registry.read("sails", "hydravion")
-  cookies = "sails.sid=" + sails
+  ' Get Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    return url
+  end if
 
   fs = createObject("roFileSystem")
   xfer = createObject("roUrlTransfer")
@@ -101,7 +115,7 @@ function loadCacheImage(url) as String
   xfer.InitClientCertificates()
   xfer.AddHeader("Accept", "application/json")
   xfer.AddHeader("User-Agent", useragent)
-  xfer.AddHeader("Cookie", cookies)
+  xfer.AddHeader("Authorization", "Bearer " + accessToken)
 
   filename = url
   filename = mid(filename, instr(1, filename, "//") + 1)

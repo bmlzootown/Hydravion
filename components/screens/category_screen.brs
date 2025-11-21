@@ -27,7 +27,8 @@ end sub
 
 sub getChannels(id)
   m.subs_task = CreateObject("roSGNode", "urlTask")
-  url = "https://www.floatplane.com/api/v3/creator/info?id=" + id
+  apiConfigObj = ApiConfig()
+  url = apiConfigObj.buildApiUrl("/api/v3/creator/info?id=" + id)
   m.subs_task.setField("url", url)
   m.subs_task.observeField("response", "gotChannels")
   m.subs_task.control = "RUN"

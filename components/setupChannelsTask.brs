@@ -9,7 +9,8 @@ sub init()
     for each channel in json.channels
       node = createObject("roSGNode", "category_node")
       node.title = channel.title
-      node.feed_url = "https://www.floatplane.com/api/v3/content/creator?id=" + channel.creator + "&channel=" + channel.id
+      apiConfigObj = ApiConfig()
+      node.feed_url = apiConfigObj.buildApiUrl("/api/v3/content/creator?id=" + channel.creator + "&channel=" + channel.id)
       node.creatorGUID = channel.creator
       node.icon = channel.icon.path
       if channel.cover.childImages.Peek() = invalid
@@ -22,25 +23,28 @@ sub init()
     end for
   
     m.top.category_node = contentNode
+    return ""
   end function
   
   function loadCacheImage(url) as String
     appInfo = createObject("roAppInfo")
     version = appInfo.getVersion()
-    useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+    useragent = "Hydravion (Roku) v" + version
 
-    registry = RegistryUtil()
-  
-    sails = registry.read("sails", "hydravion")
-    cookies = "sails.sid=" + sails
-  
-    fs = createObject("roFileSystem")
-    xfer = createObject("roUrlTransfer")
-    xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-    xfer.InitClientCertificates()
-    xfer.AddHeader("Accept", "application/json")
-    xfer.AddHeader("User-Agent", useragent)
-    xfer.AddHeader("Cookie", cookies)
+  ' Get Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    return url
+  end if
+
+  fs = createObject("roFileSystem")
+  xfer = createObject("roUrlTransfer")
+  xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+  xfer.InitClientCertificates()
+  xfer.AddHeader("Accept", "application/json")
+  xfer.AddHeader("User-Agent", useragent)
+  xfer.AddHeader("Authorization", "Bearer " + accessToken)
   
     filename = url
     filename = mid(filename, instr(1, filename, "//") + 1)

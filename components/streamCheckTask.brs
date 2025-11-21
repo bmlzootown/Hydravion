@@ -6,11 +6,15 @@ end sub
 function request()
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
-  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+  useragent = "Hydravion (Roku) v" + version
 
-  registry = RegistryUtil()
-  sails = registry.read("sails", "hydravion")
-  cookies = "sails.sid=" + sails
+  ' Get Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    m.top.error = "Not authenticated - please login"
+    return ""
+  end if
 
   response = fetch({
     url: m.top.url,
@@ -18,7 +22,7 @@ function request()
     method: "GET",
     headers: {
         "User-Agent": useragent,
-        "Cookie": cookies
+        "Authorization": "Bearer " + accessToken
     }
   })
   ''? response.status

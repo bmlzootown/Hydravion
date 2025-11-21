@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="likeTask" extends="task" >
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <script type="text/brightscript" uri="pkg:/components/tokenUtil.brs" />
+  <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
     <interface>
       <field id="do" type="string" />
       <field id="id" type="string" />
