@@ -1100,24 +1100,26 @@ sub closeDialog()
 end sub
 
 sub doLogout()
-  'Logs the user out'
+  ' Logs the user out and clears OAuth tokens
   m.top.getScene().dialog.close = true
-  registry = RegistryUtil()
-  registry.deleteSection("hydravion")
+  
+  ' Clear OAuth tokens using TokenUtil
+  tokenUtilObj = TokenUtil()
+  tokenUtilObj.clearTokens()
+  print "[LOGOUT] OAuth tokens cleared"
+  
+  ' Hide all screens and show login screen
   m.details_screen.visible = false
   m.content_screen.visible = false
   m.category_screen.visible = false
   m.login_screen.visible = true
   m.login_screen.setFocus(true)
+  
   ' Re-establish observer in case it was lost
   m.login_screen.observeField("next", "onNext")
-  ' Reset the login screen to restart QR code flow
+  
+  ' Reset the login screen to restart OAuth flow
   m.login_screen.setField("reset", true)
-  ' Set focus on the manual entry button for the new login screen
-  manualEntryButton = m.login_screen.findNode("manualEntryButton")
-  if manualEntryButton <> invalid
-    manualEntryButton.setFocus(true)
-  end if
 end sub
 
 sub showUpdateDialog()
