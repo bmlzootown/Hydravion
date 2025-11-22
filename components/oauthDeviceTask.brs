@@ -16,18 +16,14 @@ sub request()
   expiresIn = deviceAuthResponse.expires_in
   interval = deviceAuthResponse.interval
   
-  ' Generate QR code from verification_uri_complete
-  urlTransfer = CreateObject("roUrlTransfer")
-  escapedData = urlTransfer.Escape(verificationUriComplete)
-  qrCodeApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=" + escapedData
-  m.top.qrCodeUrl = qrCodeApiUrl
+  ' Pass verification URI to main thread for QR code generation
+  m.top.verificationUriComplete = verificationUriComplete
   m.top.userCode = userCode
   m.top.verificationUri = deviceAuthResponse.verification_uri
   m.top.status = "QR_CODE_READY"
   
   print "[OAUTH] OAuth device flow started"
   print "[OAUTH] User code: " + userCode
-  print "[OAUTH] QR code generated"
   
   ' Poll for token
   pollForToken(deviceCode, interval, expiresIn)

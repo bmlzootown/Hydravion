@@ -24,3 +24,8 @@ Having issues? Have feedback? Join the [Discord server](https://discord.gg/4xKDG
     <img src="https://i.imgur.com/Q8mTKCq.png" width="500px">
     <img src="https://i.imgur.com/Ucck3Es.png" width="500px">
 </p>
+
+## Credits
+
+### QR Code Generation
+This project uses the [QR-Code-generator-brightscript](https://github.com/paramount-engineering/QR-Code-generator-brightscript) library by Paramount, which is a derivative of the [QR Code generator](https://github.com/nayuki/QR-Code-generator) by Project Nayuki, for oauth flow. Both libraries are licensed under the MIT License.

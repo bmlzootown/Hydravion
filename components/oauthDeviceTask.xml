@@ -3,9 +3,9 @@
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
   <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
   <interface>
-    <field id="qrCodeUrl" type="string" />
     <field id="userCode" type="string" />
     <field id="verificationUri" type="string" />
+    <field id="verificationUriComplete" type="string" />
     <field id="status" type="string" />
     <field id="error" type="string" />
     <field id="expiresIn" type="string" />

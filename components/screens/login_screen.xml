@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="login_screen" extends="group">
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <!-- QR Code Library -->
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.high.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.mid.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.low.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.draw.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.mask.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.help.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.utils.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrSegment.brs" />
   <interface>
     <field id="next" type="string" />
     <field id="skip" type="string" />
@@ -59,12 +69,14 @@
             horizAlign="center"
             vertAlign="center"
             itemSpacings="[20]">
-            <Poster
+            <qrCode
               id="qrCode"
               width="300"
               height="300"
               visible="true"
-              loadDisplayMode="scaleToFit" />
+              border="1"
+              pixel="10"
+              ecl="LOW" />
             
             <!-- Timer section -->
             <LayoutGroup

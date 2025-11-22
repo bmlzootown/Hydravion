@@ -1,9 +1,10 @@
 function init()
   m.login_text = m.top.findNode("login_text")
-  m.login_text.font.size = 50
+  if m.login_text <> invalid
+    m.login_text.font.size = 50
+  end if
 
   m.qrCode = m.top.findNode("qrCode")
-  m.qrCodeUrl = m.top.findNode("qrCodeUrl")
   m.expirationTimerLabel = m.top.findNode("expirationTimerLabel")
   m.expirationTimer = m.top.findNode("expirationTimer")
   m.orLabel = m.top.findNode("orLabel")
@@ -132,7 +133,6 @@ sub onReset()
 end sub
 
 sub refreshQRCode()
-  print "[PROGRESS] Refreshing QR code"
   ' Stop existing OAuth task if running
   if m.oauthTask <> invalid
     m.oauthTask.control = "STOP"
@@ -185,23 +185,16 @@ sub startOAuthFlow()
   
   ' Start OAuth device flow task
   m.oauthTask = createObject("roSGNode", "oauthDeviceTask")
-  m.oauthTask.observeField("qrCodeUrl", "onQRCodeReady")
+  print "[PROGRESS] Setting up OAuth task observers..."
   m.oauthTask.observeField("userCode", "onUserCodeReady")
   m.oauthTask.observeField("verificationUri", "onVerificationUriReady")
   m.oauthTask.observeField("status", "onOAuthStatusChanged")
   m.oauthTask.observeField("error", "onOAuthError")
   m.oauthTask.observeField("expiresIn", "onExpiresInChanged")
   m.oauthTask.control = "RUN"
+  print "[PROGRESS] OAuth task started"
 end sub
 
-
-sub onQRCodeReady(obj)
-  qrUrl = obj.getData()
-  if qrUrl <> invalid and qrUrl <> ""
-    m.qrCode.uri = qrUrl
-    print "[PROGRESS] QR code displayed"
-  end if
-end sub
 
 sub onUserCodeReady(obj)
   userCode = obj.getData()
@@ -229,6 +222,17 @@ sub onVerificationUriReady(obj)
 end sub
 
 sub onOAuthStatusChanged(obj)
+  status = obj.getData()
+  print "[PROGRESS] OAuth status changed: " + status
+  ' If status is QR_CODE_READY, set the QR code text on the component
+  if status = "QR_CODE_READY" and m.oauthTask <> invalid
+    verificationUriComplete = m.oauthTask.verificationUriComplete
+    if verificationUriComplete <> invalid and verificationUriComplete <> ""
+      ' The qrCode node is the library's QRCode component
+      ' Just set the text field - the component will automatically generate the QR code
+      m.qrCode.text = verificationUriComplete
+    end if
+  end if
   status = obj.getData()
   if status = "QR_CODE_READY"
     m.countdownTimer.control = "start"
