@@ -66,11 +66,11 @@
           text="" />
         <MarkupGrid 
           id = "content_grid" 
-          translation = "[ 25, 415 ]" 
+          translation = "[ 40, 415 ]" 
           itemComponentName = "ContentGridItem" 
           numColumns = "3" 
           numRows = "5" 
-          itemSize = "[ 390, 275 ]" 
+          itemSize = "[ 380, 275 ]" 
           itemSpacing = "[ 30, 40 ]" 
           vertFocusAnimationStyle="fixedFocus"
           drawFocusFeedback = "true" />
@@ -102,7 +102,7 @@
               fieldToInterp="thumbnail.translation" />
             <Vector2DFieldInterpolator id = "intGridUp"
               key="[0.0, 1.0]"
-              keyValue="[ [25.0, 415.0], [25.0, 127.0] ]"
+              keyValue="[ [40.0, 415.0], [40.0, 127.0] ]"
               fieldToInterp="content_grid.translation" />
             <Vector2DFieldInterpolator id = "intCoverUp"
               key="[0.0, 1.0]"
@@ -142,7 +142,7 @@
               fieldToInterp="thumbnail.translation" />
             <Vector2DFieldInterpolator id = "intGridDown"
               key="[1.0, 0.0]"
-              keyValue="[ [25.0, 415.0], [25.0, 127.0] ]"
+              keyValue="[ [40.0, 415.0], [40.0, 127.0] ]"
               fieldToInterp="content_grid.translation" />
             <Vector2DFieldInterpolator id = "intCoverDown"
               key="[1.0, 0.0]"
