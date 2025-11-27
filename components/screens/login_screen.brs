@@ -75,6 +75,14 @@ function init()
   ' Track if OAuth flow has been started to avoid starting it multiple times
   m.oauthFlowStarted = false
   
+  ' Rate limiting for OAuth retries
+  m.oauthRetryCount = 0
+  m.lastOAuthErrorTime = invalid
+  m.oauthRetryTimer = createObject("roSGNode", "Timer")
+  m.oauthRetryTimer.repeat = false
+  m.oauthRetryTimer.duration = 5.0  ' Wait 5 seconds before retrying
+  m.oauthRetryTimer.observeField("fire", "onOAuthRetryTimerFire")
+  
   ' Start OAuth flow if screen is already visible
   if m.top.visible = true
     startOAuthFlow()
@@ -85,6 +93,10 @@ end function
 sub onVisibleChanged(obj)
   if m.top.visible = true and not m.oauthFlowStarted
     ' Screen became visible and OAuth flow hasn't started yet
+    ' Reset retry counter when screen becomes visible
+    m.oauthRetryCount = 0
+    m.lastOAuthErrorTime = invalid
+    m.oauthRetryTimer.control = "stop"
     startOAuthFlow()
     m.oauthFlowStarted = true
   else if m.top.visible = false
@@ -93,6 +105,7 @@ sub onVisibleChanged(obj)
       m.oauthTask.control = "STOP"
     end if
     m.countdownTimer.control = "stop"
+    m.oauthRetryTimer.control = "stop"
     m.oauthFlowStarted = false
   end if
 end sub
@@ -119,6 +132,11 @@ sub onReset()
       m.oauthTask.control = "STOP"
     end if
     m.countdownTimer.control = "stop"
+    m.oauthRetryTimer.control = "stop"
+    
+    ' Reset retry counter and error tracking
+    m.oauthRetryCount = 0
+    m.lastOAuthErrorTime = invalid
     
     ' Reset OAuth flow flag so it can start again
     m.oauthFlowStarted = false
@@ -138,6 +156,7 @@ sub refreshQRCode()
     m.oauthTask.control = "STOP"
   end if
   m.countdownTimer.control = "stop"
+  m.oauthRetryTimer.control = "stop"
   
   ' Switch back to timer view
   m.expirationTimerLabel.text = "Time Remaining:"
@@ -254,15 +273,72 @@ end sub
 
 sub onOAuthError(obj)
   error = obj.getData()
-  if error = "TIMEOUT" or error = "EXPIRED"
-    m.countdownTimer.control = "stop"
-    ' Automatically refresh QR code
-    refreshQRCode()
-  else if error <> invalid and error <> ""
-    m.countdownTimer.control = "stop"
-    ' Automatically refresh QR code
-    refreshQRCode()
+  
+  ' Stop countdown timer
+  m.countdownTimer.control = "stop"
+  
+  ' Check if this is a client credential error (401 - invalid_client)
+  ' These shouldn't be auto-retried as they indicate a configuration issue
+  if error <> invalid and error.InStr("invalid_client") >= 0
+    print "[ERROR] OAuth client credential error - not retrying automatically"
+    ' Show error to user instead of auto-retrying
+    showErrorDialog("Authentication error: Invalid client credentials. Please check configuration.")
+    return
   end if
+  
+  ' For timeout/expired errors, retry with rate limiting
+  if error = "TIMEOUT" or error = "EXPIRED"
+    scheduleOAuthRetry()
+  else if error <> invalid and error <> ""
+    ' For other errors, check rate limit before retrying
+    scheduleOAuthRetry()
+  end if
+end sub
+
+sub scheduleOAuthRetry()
+  ' Rate limiting: prevent rapid retries
+  currentTime = CreateObject("roDateTime")
+  currentTimeSeconds = currentTime.AsSeconds()
+  
+  ' If we retried recently (within last 5 seconds), wait before retrying again
+  if m.lastOAuthErrorTime <> invalid
+    timeSinceLastError = currentTimeSeconds - m.lastOAuthErrorTime
+    if timeSinceLastError < 5
+      print "[OAUTH] Rate limiting: waiting before retry (last error was " + timeSinceLastError.ToStr() + " seconds ago)"
+      ' Start retry timer if not already running
+      if not m.oauthRetryTimer.control = "start"
+        m.oauthRetryTimer.control = "start"
+      end if
+      return
+    end if
+  end if
+  
+  ' Increment retry count
+  m.oauthRetryCount = m.oauthRetryCount + 1
+  m.lastOAuthErrorTime = currentTimeSeconds
+  
+  ' Limit maximum retries to prevent infinite loops
+  if m.oauthRetryCount > 10
+    print "[ERROR] OAuth retry limit reached (" + m.oauthRetryCount.ToStr() + " attempts)"
+    showErrorDialog("Authentication failed after multiple attempts. Please try again later.")
+    m.oauthRetryCount = 0  ' Reset counter
+    return
+  end if
+  
+  print "[OAUTH] Scheduling retry #" + m.oauthRetryCount.ToStr()
+  ' Wait a bit before retrying (exponential backoff: 2^retryCount seconds, max 30 seconds)
+  waitSeconds = 2 ^ m.oauthRetryCount
+  if waitSeconds > 30
+    waitSeconds = 30
+  end if
+  m.oauthRetryTimer.duration = waitSeconds
+  m.oauthRetryTimer.control = "start"
+end sub
+
+sub onOAuthRetryTimerFire()
+  m.oauthRetryTimer.control = "stop"
+  print "[OAUTH] Retrying OAuth flow after delay"
+  refreshQRCode()
 end sub
 
 sub onExpiresInChanged(obj)
