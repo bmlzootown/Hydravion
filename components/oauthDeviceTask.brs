@@ -123,10 +123,17 @@ sub pollForToken(deviceCode as String, intervalSeconds as Integer, expiresInSeco
       tokenExpirationTime = currentTimeSeconds + tokenResponse.expires_in
       registry.write("token_expires_at", tokenExpirationTime.ToStr(), "hydravion")
       
-      ' Store refresh token expiration if provided
-      if tokenResponse.refresh_expires_in <> invalid
+      ' Store refresh token expiration
+      ' If refresh_expires_in is 0, use 30-day idle limit (will be extended on each refresh)
+      if tokenResponse.refresh_expires_in <> invalid and tokenResponse.refresh_expires_in > 0
         refreshExpirationTime = currentTimeSeconds + tokenResponse.refresh_expires_in
         registry.write("refresh_token_expires_at", refreshExpirationTime.ToStr(), "hydravion")
+        refreshDays = tokenResponse.refresh_expires_in \ 86400
+        print "[OAUTH] Refresh token expires in " + refreshDays.ToStr() + " days (from API)"
+      else
+        refreshExpirationTime = currentTimeSeconds + (30 * 24 * 60 * 60)  ' 30 days in seconds
+        registry.write("refresh_token_expires_at", refreshExpirationTime.ToStr(), "hydravion")
+        print "[OAUTH] Refresh token has 30-day idle limit (refresh_expires_in=0), expiration set to 30 days from now"
       end if
       
       m.top.status = "AUTHENTICATED"

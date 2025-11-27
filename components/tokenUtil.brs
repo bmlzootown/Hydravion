@@ -53,8 +53,6 @@ function TokenUtil() as Object
             currentTimeSeconds = currentTime.AsSeconds()
             expiresAtSeconds = Val(expiresAt)
             
-            ' Add 5 minute (300 second) buffer to refresh proactively before actual expiration
-            ' This ensures we refresh well before the token expires, reducing failed API calls
             refreshBufferSeconds = 300
             timeUntilExpiration = expiresAtSeconds - currentTimeSeconds
             
@@ -77,7 +75,6 @@ function TokenUtil() as Object
                 return false
             end if
             
-            ' Check if refresh token is expired
             refreshExpiresAt = registry.read("refresh_token_expires_at", "hydravion")
             if refreshExpiresAt <> invalid
                 currentTime = CreateObject("roDateTime")
@@ -85,17 +82,20 @@ function TokenUtil() as Object
                 refreshExpiresAtSeconds = Val(refreshExpiresAt)
                 
                 if currentTimeSeconds >= refreshExpiresAtSeconds
-                    print "[TOKEN] Refresh token expired (expired at: " + refreshExpiresAtSeconds.ToStr() + ", current: " + currentTimeSeconds.ToStr() + ")"
-                    ' Clear tokens
-                    m.clearTokens()
-                    return false
+                    print "[TOKEN] Stored refresh token expiration time has passed, but attempting refresh anyway (backend may still accept it)"
                 else
                     timeUntilRefreshExpiration = refreshExpiresAtSeconds - currentTimeSeconds
-                    minutes = timeUntilRefreshExpiration \ 60
-                    print "[TOKEN] Refresh token valid, expires in " + minutes.ToStr() + " minutes"
+                    days = timeUntilRefreshExpiration \ 86400
+                    hours = (timeUntilRefreshExpiration mod 86400) \ 3600
+                    if days > 0
+                        print "[TOKEN] Refresh token valid, expires in " + days.ToStr() + " days " + hours.ToStr() + " hours"
+                    else
+                        minutes = timeUntilRefreshExpiration \ 60
+                        print "[TOKEN] Refresh token valid, expires in " + minutes.ToStr() + " minutes"
+                    end if
                 end if
             else
-                print "[TOKEN] No refresh token expiration time found, attempting refresh anyway"
+                print "[TOKEN] No refresh token expiration time found (may be from old login), attempting refresh"
             end if
             
             ' Request new token
@@ -141,14 +141,22 @@ function TokenUtil() as Object
                                     registry.write("refresh_token", response.refresh_token, "hydravion")
                                 end if
                                 
-                                ' Update refresh token expiration if provided
-                                if response.refresh_expires_in <> invalid
+                                ' Update refresh token expiration
+                                if response.refresh_expires_in <> invalid and response.refresh_expires_in > 0
                                     refreshExpirationTime = currentTimeSeconds + response.refresh_expires_in
                                     registry.write("refresh_token_expires_at", refreshExpirationTime.ToStr(), "hydravion")
-                                    refreshMinutes = response.refresh_expires_in \ 60
-                                    print "[TOKEN] Refresh token expires in " + refreshMinutes.ToStr() + " minutes"
+                                    refreshDays = response.refresh_expires_in \ 86400
+                                    refreshHours = (response.refresh_expires_in mod 86400) \ 3600
+                                    if refreshDays > 0
+                                        print "[TOKEN] Refresh token expires in " + refreshDays.ToStr() + " days (from API)"
+                                    else
+                                        refreshMinutes = response.refresh_expires_in \ 60
+                                        print "[TOKEN] Refresh token expires in " + refreshMinutes.ToStr() + " minutes (from API)"
+                                    end if
                                 else
-                                    print "[TOKEN] Warning: No refresh_expires_in in response, refresh token expiration not updated"
+                                    refreshExpirationTime = currentTimeSeconds + (30 * 24 * 60 * 60)  ' 30 days in seconds
+                                    registry.write("refresh_token_expires_at", refreshExpirationTime.ToStr(), "hydravion")
+                                    print "[TOKEN] Refresh token has 30-day idle limit (refresh_expires_in=0), extending expiration by 30 days from now"
                                 end if
                                 
                                 accessMinutes = response.expires_in \ 60

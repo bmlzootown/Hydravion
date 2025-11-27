@@ -43,8 +43,6 @@ function init()
     time = CreateObject("roDateTime")
     m.login_screen.next = "beep" + time.AsSeconds().ToStr()
     ' The observer will fire and call onNext automatically
-    'Signal that we are logged in and we have completed launch
-    'm.top.signalBeacon("AppDialogComplete")
   else
     ' No token, show login screen directly
     m.login_screen.visible = true

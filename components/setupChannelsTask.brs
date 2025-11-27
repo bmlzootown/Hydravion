@@ -37,13 +37,13 @@ sub init()
   if accessToken = invalid then
     return url
   end if
-
-  fs = createObject("roFileSystem")
-  xfer = createObject("roUrlTransfer")
-  xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
-  xfer.InitClientCertificates()
-  xfer.AddHeader("Accept", "application/json")
-  xfer.AddHeader("User-Agent", useragent)
+  
+    fs = createObject("roFileSystem")
+    xfer = createObject("roUrlTransfer")
+    xfer.SetCertificatesFile("common:/certs/ca-bundle.crt")
+    xfer.InitClientCertificates()
+    xfer.AddHeader("Accept", "application/json")
+    xfer.AddHeader("User-Agent", useragent)
   xfer.AddHeader("Authorization", "Bearer " + accessToken)
   
     filename = url

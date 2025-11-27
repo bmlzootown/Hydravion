@@ -77,7 +77,7 @@
               border="1"
               pixel="10"
               ecl="LOW" />
-            
+
             <!-- Timer section -->
             <LayoutGroup
               id="timerSection"
@@ -171,7 +171,7 @@
                 maxLines="2"
                 visible="false" />
             </Group>
-            
+
             <Label
               id="enterCodeLabel"
               font="font:SmallSystemFont"
