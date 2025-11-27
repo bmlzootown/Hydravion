@@ -6,6 +6,8 @@ sub request()
   ' Request device authorization
   deviceAuthResponse = requestDeviceAuthorization()
   if deviceAuthResponse = invalid
+    ' Error details are already logged in requestDeviceAuthorization
+    ' Set a generic error - the actual error message is in the logs
     m.top.error = "Failed to request device authorization"
     return
   end if
@@ -35,7 +37,7 @@ function requestDeviceAuthorization() as Object
   useragent = "Hydravion (Roku) v" + version
   
   apiConfigObj = ApiConfig()
-  url = apiConfigObj.buildAuthUrl("/realms/floatplane-pp/protocol/openid-connect/auth/device")
+  url = apiConfigObj.buildRealmAuthUrl("openid-connect/auth/device")
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
   port = CreateObject("roMessagePort")
@@ -61,6 +63,14 @@ function requestDeviceAuthorization() as Object
         else
           responseBody = event.GetString()
           print "[OAUTH] Device authorization error: " + code.ToStr() + " - " + responseBody
+          ' Parse error to pass more specific information
+          errorResponse = ParseJSON(responseBody)
+          if errorResponse <> invalid and errorResponse.error <> invalid
+            ' Pass the specific error type to the main thread
+            m.top.error = errorResponse.error
+          else
+            m.top.error = "Failed to request device authorization"
+          end if
           return invalid
         end if
       else if event = invalid
@@ -135,7 +145,7 @@ function requestToken(deviceCode as String) as Object
   useragent = "Hydravion (Roku) v" + version
   
   apiConfigObj = ApiConfig()
-  url = apiConfigObj.buildAuthUrl("/realms/floatplane-pp/protocol/openid-connect/token")
+  url = apiConfigObj.buildRealmAuthUrl("openid-connect/token")
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
   port = CreateObject("roMessagePort")

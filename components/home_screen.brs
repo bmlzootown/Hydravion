@@ -413,7 +413,10 @@ sub onRequestError(obj)
   if type(errorData) = "roString" or type(errorData) = "String"
     ' Check if it's an authentication error
     if errorData.InStr("Not authenticated") >= 0 or errorData.InStr("please login") >= 0
-      print "[ERROR] Authentication failed, redirecting to login screen"
+      print "[ERROR] Authentication failed, clearing invalid tokens and redirecting to login screen"
+      ' Clear invalid tokens
+      tokenUtilObj = TokenUtil()
+      tokenUtilObj.clearTokens()
       ' Redirect to login screen
       m.category_screen.visible = false
       m.content_screen.visible = false
@@ -449,7 +452,10 @@ sub onRequestError(obj)
   if error.errors <> invalid and error.errors.Count() > 0
     ' Check if it's an authentication error
     if error.errors[0].name <> invalid and (error.errors[0].name = "notLoggedInError" or error.errors[0].name.InStr("auth") >= 0)
-      print "[ERROR] Authentication error from API, redirecting to login screen"
+      print "[ERROR] Authentication error from API (notLoggedInError), clearing invalid tokens and redirecting to login screen"
+      ' Clear invalid tokens
+      tokenUtilObj = TokenUtil()
+      tokenUtilObj.clearTokens()
       ' Redirect to login screen
       m.category_screen.visible = false
       m.content_screen.visible = false
@@ -1077,6 +1083,9 @@ sub closeDialog()
     ' Check if this was a login error and navigate back to login screen
     if m.lastError <> invalid and m.lastError.errors <> invalid and m.lastError.errors.Count() > 0
       if m.lastError.errors[0].name = "notLoggedInError"
+        ' Clear invalid tokens
+        tokenUtilObj = TokenUtil()
+        tokenUtilObj.clearTokens()
         ' Navigate back to login screen
         m.category_screen.visible = false
         m.content_screen.visible = false

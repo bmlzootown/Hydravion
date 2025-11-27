@@ -104,7 +104,7 @@ function TokenUtil() as Object
             useragent = "Hydravion (Roku) v" + version
             
             apiConfigObj = ApiConfig()
-            url = apiConfigObj.buildAuthUrl("/realms/floatplane-pp/protocol/openid-connect/token")
+            url = apiConfigObj.buildRealmAuthUrl("openid-connect/token")
             https = CreateObject("roUrlTransfer")
             https.RetainBodyOnError(true)
             port = CreateObject("roMessagePort")
