@@ -143,17 +143,16 @@ def create_zip():
                 arcname = png_file.relative_to(BASE_DIR)
                 zipf.write(png_file, arcname, compress_type=zipfile.ZIP_STORED)
         
-        # Add all other files (excluding certain patterns)
-        exclude_patterns = [
-            "*.pkg", "dist", ".git", ".vscode", "out", "*.DS_Store",
-            "makefile", "*.md", "storeassets*", "keys*", ".*"
+        # Files and directories to exclude by name (exact matches in path parts)
+        # Note: "source" directory is required by Roku even if not used, so don't exclude it
+        exclude_names = [
+            "roku_build.py", "LICENSE", "openid-configuration.json",
+            ".github", ".vscode", "dist", "out", ".gitignore", ".git"
         ]
         
-        # Files and directories to exclude by name (exact matches)
-        exclude_names = [
-            "roku_build.py", "LICENSE", "openid-configuration.json", "source",
-            ".github", ".vscode", "dist", "out", ".gitignore"
-        ]
+        # File extensions and patterns to exclude
+        exclude_extensions = [".pkg", ".DS_Store"]
+        exclude_suffixes = [".md"]
         
         for file_path in BASE_DIR.rglob("*"):
             if file_path.is_file() and file_path.suffix != ".png":
@@ -165,12 +164,18 @@ def create_zip():
                 if rel_path.name.startswith('.'):
                     should_exclude = True
                 
-                # Check exclusion patterns
+                # Check file extension
                 if not should_exclude:
-                    for pattern in exclude_patterns:
-                        if pattern in str(rel_path):
-                            should_exclude = True
-                            break
+                    if file_path.suffix in exclude_extensions:
+                        should_exclude = True
+                    elif any(rel_path.name.endswith(suffix) for suffix in exclude_suffixes):
+                        should_exclude = True
+                
+                # Check if file name matches exclude patterns
+                if not should_exclude:
+                    filename = rel_path.name.lower()
+                    if filename == "makefile" or filename.startswith("storeassets") or filename.startswith("keys"):
+                        should_exclude = True
                 
                 # Check if any parent directory or the file itself matches exclude_names
                 if not should_exclude:
@@ -218,20 +223,28 @@ def install_app():
         result = subprocess.run(curl_cmd, capture_output=True, text=True, check=False)
         http_status = result.stdout.strip()
         
+        # Check response content first (it might have error details even with non-200 status)
+        error_details = ""
+        if DEV_SERVER_TMP.exists():
+            with open(DEV_SERVER_TMP, 'r') as f:
+                error_details = f.read()
+        
         if http_status != "200":
             print(f"ERROR: Device returned HTTP {http_status}")
+            if error_details:
+                print(f"Error details: {error_details[:500]}")
+            if result.stderr:
+                print(f"curl stderr: {result.stderr}")
             return False
         
         # Check response
-        if DEV_SERVER_TMP.exists():
-            with open(DEV_SERVER_TMP, 'r') as f:
-                content = f.read()
-                if "Success" in content or "success" in content.lower():
-                    print("Result: Success")
-                    return True
-                else:
-                    print(f"Result: {content[:200]}")
-                    return False
+        if error_details:
+            if "Success" in error_details or "success" in error_details.lower():
+                print("Result: Success")
+                return True
+            else:
+                print(f"Result: {error_details[:200]}")
+                return False
     except Exception as e:
         print(f"ERROR: Failed to install app: {e}")
         return False
