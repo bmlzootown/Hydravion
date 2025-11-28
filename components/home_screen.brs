@@ -839,9 +839,10 @@ sub updateSelectedMediaProgressBar(position as Integer)
 end sub
 
 sub initializeVideoPlayer()
-  'Setup video player with Bearer token
+  ' Setup video player with Bearer token
+  ' Skip refresh here
   tokenUtilObj = TokenUtil()
-  accessToken = tokenUtilObj.getAccessToken()
+  accessToken = tokenUtilObj.getAccessToken(true)
   if accessToken = invalid then
     print "[PROGRESS] No access token available for video player"
     return

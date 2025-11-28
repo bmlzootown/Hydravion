@@ -6,8 +6,9 @@ function TokenUtil() as Object
     tokenUtilObj = {
         
         '** Get access token, refreshing if necessary
+        '@param skipRefresh
         '@return access token string or invalid if not available
-        getAccessToken: function() as Dynamic
+        getAccessToken: function(skipRefresh = false as Boolean) as Dynamic
             registry = RegistryUtil()
             accessToken = registry.read("access_token", "hydravion")
             
@@ -18,6 +19,12 @@ function TokenUtil() as Object
             
             ' Check if token is expired (or about to expire)
             if m.isTokenExpired()
+                if skipRefresh
+                    ' Called from render thread - return existing token, refresh will happen in Task
+                    print "[TOKEN] Access token expired but skipping refresh (render thread), will refresh when used in Task"
+                    return accessToken
+                end if
+                
                 print "[TOKEN] Access token expired or expiring soon, attempting refresh..."
                 ' Try to refresh
                 if m.refreshToken()
@@ -198,9 +205,24 @@ function TokenUtil() as Object
         
         '** Check if user is authenticated (has valid token)
         '@return true if authenticated, false otherwise
+        '   Note: Does not attempt refresh (to avoid render thread issues)
+        '   Actual refresh will happen when token is used in Task context
         isAuthenticated: function() as Boolean
-            token = m.getAccessToken()
-            return token <> invalid
+            registry = RegistryUtil()
+            accessToken = registry.read("access_token", "hydravion")
+            
+            if accessToken = invalid
+                return false
+            end if
+            
+            ' Check if token is expired (but don't refresh here - that happens in Task context)
+            if m.isTokenExpired()
+                ' Token exists but is expired - still consider authenticated
+                ' Refresh will happen when token is actually used in a Task
+                return true
+            end if
+            
+            return true
         end function
         
         '** Log token status for debugging/testing
