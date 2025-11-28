@@ -149,16 +149,36 @@ def create_zip():
             "makefile", "*.md", "storeassets*", "keys*", ".*"
         ]
         
+        # Files and directories to exclude by name (exact matches)
+        exclude_names = [
+            "roku_build.py", "LICENSE", "openid-configuration.json", "source",
+            ".github", ".vscode", "dist", "out", ".gitignore"
+        ]
+        
         for file_path in BASE_DIR.rglob("*"):
             if file_path.is_file() and file_path.suffix != ".png":
                 # Check if file should be excluded
                 rel_path = file_path.relative_to(BASE_DIR)
                 should_exclude = False
                 
-                for pattern in exclude_patterns:
-                    if pattern in str(rel_path) or rel_path.name.startswith('.'):
-                        should_exclude = True
-                        break
+                # Check if file name starts with dot (catches .gitignore, .github files, etc.)
+                if rel_path.name.startswith('.'):
+                    should_exclude = True
+                
+                # Check exclusion patterns
+                if not should_exclude:
+                    for pattern in exclude_patterns:
+                        if pattern in str(rel_path):
+                            should_exclude = True
+                            break
+                
+                # Check if any parent directory or the file itself matches exclude_names
+                if not should_exclude:
+                    path_parts = rel_path.parts
+                    for part in path_parts:
+                        if part in exclude_names:
+                            should_exclude = True
+                            break
                 
                 if not should_exclude:
                     arcname = rel_path
