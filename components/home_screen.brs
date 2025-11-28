@@ -29,6 +29,8 @@ function init()
   
   m.arrutil = ArrayUtil()
 
+  ' Track if we've fired login dialog beacons (only for initial login before home page)
+  m.loginDialogBeaconFired = false
 
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
@@ -45,6 +47,9 @@ function init()
     ' The observer will fire and call onNext automatically
   else
     ' No token, show login screen directly
+    ' Fire AppDialogInitiate beacon when login dialog is shown before home page
+    m.top.signalBeacon("AppDialogInitiate")
+    m.loginDialogBeaconFired = true
     m.login_screen.visible = true
     m.login_screen.setFocus(true)
   end if
@@ -99,6 +104,11 @@ sub onNext(obj)
     return
   end if
   print "[PROGRESS] onNext - proceeding with login flow"
+  ' Fire AppDialogComplete beacon when login dialog is dismissed after successful authentication
+  if m.loginDialogBeaconFired = true
+    m.top.signalBeacon("AppDialogComplete")
+    m.loginDialogBeaconFired = false
+  end if
   m.login_screen.visible = false
   'Now that we have cookies, we can initialize the video/live player
   initializeVideoPlayer()
