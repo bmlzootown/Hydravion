@@ -18,10 +18,18 @@ sub request()
   expiresIn = deviceAuthResponse.expires_in
   interval = deviceAuthResponse.interval
   
+  ' Get verification URI for display - use user-friendly URL for prod only
+  verificationUri = deviceAuthResponse.verification_uri
+  apiConfigObj = ApiConfig()
+  if apiConfigObj.environment = "prod"
+    verificationUri = "floatplane.com/link"
+  end if
+  
   ' Pass verification URI to main thread for QR code generation
+  ' Note: verificationUriComplete is unchanged - QR code uses original API response
   m.top.verificationUriComplete = verificationUriComplete
   m.top.userCode = userCode
-  m.top.verificationUri = deviceAuthResponse.verification_uri
+  m.top.verificationUri = verificationUri
   m.top.status = "QR_CODE_READY"
   
   print "[OAUTH] OAuth device flow started"
