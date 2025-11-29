@@ -4,16 +4,17 @@ sub init()
 end sub
 
 function request()
-  registry = RegistryUtil()
-  sails = registry.read("sails", "hydravion")
-  if sails = invalid then
-    m.top.error = "Invalid SAILS cookie!"
+  ' Get Bearer token using TokenUtil
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken()
+  if accessToken = invalid then
+    m.top.error = "Not authenticated - please login"
+    return ""
   end if
-  cookies = "sails.sid=" + sails
 
   appInfo = createObject("roAppInfo")
   version = appInfo.getVersion()
-  useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+  useragent = "Hydravion (Roku) v" + version
 
   https = CreateObject("roUrlTransfer")
   https.RetainBodyOnError(true)
@@ -23,7 +24,7 @@ function request()
   https.setCertificatesFile("common:/certs/ca-bundle.crt")
   https.AddHeader("Accept", "application/json")
   https.AddHeader("User-Agent", useragent)
-  https.AddHeader("Cookie", cookies)
+  https.AddHeader("Authorization", "Bearer " + accessToken)
   https.initClientCertificates()
 
   if https.AsyncGetToString()
@@ -42,20 +43,5 @@ function request()
       end if
     end while
   end if
-
-  'https.AsyncGetToString()
-  'event = wait(5000,port)
-  'if event = invalid then
-  ''  m.top.error = "invalid"
-  ''  https.AsyncCancel()
-  'else
-  ''  if type(event) = "roUrlEvent"
-  ''    code = event.GetResponseCode()
-  ''    if code = 200
-  ''      m.top.response = event.GetString()
-  ''    else
-  ''      m.top.error = event.GetString()
-  ''    end if
-  ''  end if
-  'end if
+  return ""
 end function

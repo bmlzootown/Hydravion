@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="home_screen" extends="Scene" initialFocus="login_screen">
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <script type="text/brightscript" uri="pkg:/components/tokenUtil.brs" />
+  <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
   <children>
     <login_screen
       id="login_screen"
-      visible="true"
+      visible="false"
       translation="[0,0]" />
     <category_screen
       id="category_screen"

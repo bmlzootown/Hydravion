@@ -4,16 +4,17 @@ sub init()
   end sub
   
   function post()
-    registry = RegistryUtil()
-    sails = registry.read("sails", "hydravion")
-    if sails = invalid then
-      m.top.error = "Invalid SAILS cookie!"
+    ' Get Bearer token using TokenUtil
+    tokenUtilObj = TokenUtil()
+    accessToken = tokenUtilObj.getAccessToken()
+    if accessToken = invalid then
+      m.top.error = "Not authenticated - please login"
+      return ""
     end if
-    cookies = "sails.sid=" + sails
 
     appInfo = createObject("roAppInfo")
     version = appInfo.getVersion()
-    useragent = "Hydravion (Roku) v" + version + ", CFNetwork"
+    useragent = "Hydravion (Roku) v" + version
   
     https = CreateObject("roUrlTransfer")
     https.RetainBodyOnError(true)
@@ -21,9 +22,9 @@ sub init()
     https.SetMessagePort(port)
     https.SetUrl(m.top.url)
     https.setCertificatesFile("common:/certs/ca-bundle.crt")
-    https.AddHeader("Content-Type", "text/plain")
+    https.AddHeader("Content-Type", "application/json")
     https.AddHeader("User-Agent", useragent)
-    https.AddHeader("Cookie", cookies)
+    https.AddHeader("Authorization", "Bearer " + accessToken)
     https.initClientCertificates()
     
     parsedJson = FormatJson(m.top.body)
@@ -43,5 +44,6 @@ sub init()
             end if
         end while
     end if
+    return ""
   end function
   

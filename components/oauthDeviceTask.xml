@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="oauthDeviceTask" extends="task" >
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
+  <interface>
+    <field id="userCode" type="string" />
+    <field id="verificationUri" type="string" />
+    <field id="verificationUriComplete" type="string" />
+    <field id="status" type="string" />
+    <field id="error" type="string" />
+    <field id="expiresIn" type="string" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/oauthDeviceTask.brs" />
+</component>
+

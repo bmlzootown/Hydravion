@@ -1,56 +1,208 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<component name="login_screen" extends="group" initialFocus="username">
+<component name="login_screen" extends="group">
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <!-- QR Code Library -->
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.high.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.mid.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.low.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.draw.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.mask.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.help.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrCode.utils.brs" />
+  <script type="text/brightscript" uri="pkg:/components/qrCode/qrSegment.brs" />
   <interface>
     <field id="next" type="string" />
     <field id="skip" type="string" />
+    <field id="reset" type="boolean" />
   </interface>
   <children>
-    <Label
-      id="login_text"
-      font="font:LargeBoldSystemFont"
+    <!-- Main container LayoutGroup -->
+    <LayoutGroup
+      id="mainContainer"
+      layoutDirection="vert"
       horizAlign="center"
-      text = "Login"
-      translation="[525,50]" />
-    <Button
-      id="username"
-      iconUri=""
-      focusedIconUri=""
-      textColor="0xFFFFFF"
-      height="75"
-      focusedTextColor="0x111111"
-      text="Username"
-      translation="[515,170]" />
+      vertAlign="top"
+      translation="[40,80]"
+      itemSpacings="[100]">
+      
+      <!-- Header section -->
+      <LayoutGroup
+        id="headerSection"
+        layoutDirection="vert"
+        horizAlign="center"
+        vertAlign="top"
+        itemSpacings="[0]">
+        <Label
+          id="login_text"
+          font="font:LargeBoldSystemFont"
+          horizAlign="center"
+          text="Scan the QR code or use the URL to login:"
+          width="1200" />
+      </LayoutGroup>
+      
+      <!-- Content section: QR code and manual entry side by side -->
+      <!-- Use LayoutGroup with 1200px invisible Label to force width (exactly like headerSection) -->
+      <LayoutGroup
+        id="contentSectionWrapper"
+        layoutDirection="vert"
+        horizAlign="center"
+        vertAlign="top"
+        itemSpacings="[0]">
+        <!-- Invisible 1200px Label to force width (exactly matching headerSection pattern) -->
+        <Label
+          width="1200"
+          height="1"
+          text=""
+          visible="false" />
+        <LayoutGroup
+          id="contentSection"
+          layoutDirection="horiz"
+          horizAlign="center"
+          vertAlign="center"
+          itemSpacings="[60]">
+          
+          <!-- Left column: QR code section -->
+          <LayoutGroup
+            id="qrCodeSection"
+            layoutDirection="vert"
+            horizAlign="center"
+            vertAlign="center"
+            itemSpacings="[20]">
+            <qrCode
+              id="qrCode"
+              width="300"
+              height="300"
+              visible="true"
+              border="1"
+              pixel="10"
+              ecl="LOW" />
 
-    <Button
-      id="password"
-      iconUri=""
-      focusedIconUri=""
-      textColor="0xFFFFFF"
-      height="75"
-      focusedTextColor="0x111111"
-      text="Password"
-      translation="[515,250]" />
+            <!-- Timer section -->
+            <LayoutGroup
+              id="timerSection"
+              layoutDirection="horiz"
+              horizAlign="center"
+              vertAlign="center"
+              itemSpacings="[10]">
+              <Label
+                id="expirationTimerLabel"
+                font="font:SmallSystemFont"
+                horizAlign="left"
+                text="Time Remaining:"
+                width="200"
+                visible="true" />
+              <Label
+                id="expirationTimer"
+                font="font:SmallSystemFont"
+                horizAlign="right"
+                text="--:--"
+                width="100"
+                visible="true" />
+            </LayoutGroup>
+          </LayoutGroup>
+          
+          <!-- Middle: Divider section -->
+          <LayoutGroup
+            id="dividerSection"
+            layoutDirection="vert"
+            horizAlign="center"
+            vertAlign="center"
+            itemSpacings="[15]">
+            <Rectangle
+              id="orLine"
+              width="2"
+              height="60"
+              color="0xFFFFFFFF"
+              translation="[24,-45]"
+              visible="true" />
+            <Label
+              id="orLabel"
+              font="font:SmallSystemFont"
+              horizAlign="center"
+              vertAlign="center"
+              text="OR"
+              width="50"
+              height="30"
+              translation="[0,0]"
+              visible="true" />
+            <Rectangle
+              id="orLine2"
+              width="2"
+              height="60"
+              color="0xFFFFFFFF"
+              translation="[24,15]"
+              visible="true" />
+          </LayoutGroup>
+          
+          <!-- Right column: Manual entry section -->
+          <LayoutGroup
+            id="manualEntrySection"
+            layoutDirection="vert"
+            horizAlign="center"
+            vertAlign="center"
+            itemSpacings="[15]">
+            <Label
+              id="manualEntryLabel"
+              font="font:SmallSystemFont"
+              horizAlign="center"
+              text="Using a browser, go to"
+              width="500"
+              visible="true" />
+            
+            <!-- Verification URI box with label overlay -->
+            <Group>
+              <Rectangle
+                id="verificationUriBox"
+                width="580"
+                height="40"
+                color="0x333333FF"
+                visible="false" />
+              <Label
+                id="verificationUriLabel"
+                font="font:SmallSystemFont"
+                horizAlign="center"
+                vertAlign="center"
+                text=""
+                width="580"
+                height="40"
+                translation="[0,0]"
+                wrap="true"
+                maxLines="2"
+                visible="false" />
+            </Group>
 
-    <Button
-      id="login"
-      iconUri=""
-      focusedIconUri=""
-      textColor="0xFFFFFF"
-      height="75"
-      focusedTextColor="0x111111"
-      text="Login"
-      translation="[515,350]" />
-
-    <Keyboard
-      id="inputKeyboard"
-      text=""
-      focusedKeyColor="0xFFFFFFFF"
-      translation="[169,417]" />
-
-    <Timer
-      id="LoginTimer"
-      duration="6" />
+            <Label
+              id="enterCodeLabel"
+              font="font:SmallSystemFont"
+              horizAlign="center"
+              text="and enter this code"
+              width="500"
+              visible="true" />
+            
+            <!-- User code box with label overlay -->
+            <Group>
+              <Rectangle
+                id="userCodeBox"
+                width="200"
+                height="40"
+                color="0x333333FF"
+                visible="false" />
+              <Label
+                id="userCodeLabel"
+                font="font:SmallSystemFont"
+                horizAlign="center"
+                vertAlign="center"
+                text=""
+                width="200"
+                height="40"
+                translation="[0,0]"
+                visible="false" />
+            </Group>
+          </LayoutGroup>
+        </LayoutGroup>
+      </LayoutGroup>
+    </LayoutGroup>
   </children>
   <script type="text/brightscript" uri="pkg:/components/screens/login_screen.brs" />
 </component>

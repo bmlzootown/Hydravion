@@ -1,132 +1,370 @@
 function init()
   m.login_text = m.top.findNode("login_text")
-  m.login_text.font.size = 80
+  if m.login_text <> invalid
+    m.login_text.font.size = 50
+  end if
 
-  m.username = m.top.findNode("username")
-  m.username.observeField("buttonSelected","onInputUsername")
-  m.username.setFocus(true)
+  m.qrCode = m.top.findNode("qrCode")
+  m.expirationTimerLabel = m.top.findNode("expirationTimerLabel")
+  m.expirationTimer = m.top.findNode("expirationTimer")
+  m.orLabel = m.top.findNode("orLabel")
+  m.orLine = m.top.findNode("orLine")
+  m.orLine2 = m.top.findNode("orLine2")
+  m.manualEntryLabel = m.top.findNode("manualEntryLabel")
+  m.verificationUriBox = m.top.findNode("verificationUriBox")
+  m.verificationUriLabel = m.top.findNode("verificationUriLabel")
+  ' Set smaller font for URL to prevent truncation
+  if m.verificationUriLabel <> invalid
+    m.verificationUriLabel.font.size = 20
+  end if
+  m.enterCodeLabel = m.top.findNode("enterCodeLabel")
+  m.userCodeBox = m.top.findNode("userCodeBox")
+  m.userCodeLabel = m.top.findNode("userCodeLabel")
+  
+  ' Set horizAlignment programmatically to ensure it's applied
+  m.contentSectionWrapper = m.top.findNode("contentSectionWrapper")
+  if m.contentSectionWrapper <> invalid
+    m.contentSectionWrapper.horizAlignment = "center"
+  end if
+  m.contentSection = m.top.findNode("contentSection")
+  if m.contentSection <> invalid
+    m.contentSection.horizAlignment = "center"
+    m.contentSection.vertAlignment = "center"
+  end if
+  
+  ' Set vertAlignment and horizAlignment programmatically for dividerSection and manualEntrySection
+  m.dividerSection = m.top.findNode("dividerSection")
+  if m.dividerSection <> invalid
+    m.dividerSection.horizAlignment = "center"
+    m.dividerSection.vertAlignment = "center"
+  end if
+  m.manualEntrySection = m.top.findNode("manualEntrySection")
+  if m.manualEntrySection <> invalid
+    m.manualEntrySection.horizAlignment = "center"
+    m.manualEntrySection.vertAlignment = "center"
+  end if
+  
+  ' Center the labels inside manualEntrySection
+  if m.manualEntryLabel <> invalid
+    m.manualEntryLabel.horizAlign = "center"
+  end if
+  if m.enterCodeLabel <> invalid
+    m.enterCodeLabel.horizAlign = "center"
+  end if
 
-  m.password = m.top.findNode("password")
-  m.password.observeField("buttonSelected","onInputPassword")
-
-  m.loginButton = m.top.findNode("login")
-  m.loginButton.observeField("buttonSelected","onLoginButton")
-
-  m.keyboard = m.top.findNode("inputKeyboard")
-  m.keyboard.visible = false
-  m.field = ""
-
-  m.twoFAClosed = false
-
-  'Signal that we are showing a login screen
-  'm.top.signalBeacon("AppDialogInitiate")
+  m.showingManualEntry = false
+  
+  ' Timer to trigger next field change asynchronously
+  m.nextTimer = createObject("roSGNode", "Timer")
+  m.nextTimer.repeat = false
+  m.nextTimer.duration = 0.1
+  m.nextTimer.observeField("fire", "onNextTimerFire")
+  
+  ' Timer for countdown display
+  m.countdownTimer = createObject("roSGNode", "Timer")
+  m.countdownTimer.repeat = true
+  m.countdownTimer.duration = 1.0
+  m.countdownTimer.observeField("fire", "onCountdownTimerFire")
+  
+  ' Observe reset field to restart OAuth flow
+  m.top.observeField("reset", "onReset")
+  
+  ' Observe visible field to start OAuth flow when screen becomes visible
+  m.top.observeField("visible", "onVisibleChanged")
+  
+  ' Track if OAuth flow has been started to avoid starting it multiple times
+  m.oauthFlowStarted = false
+  
+  ' Rate limiting for OAuth retries
+  m.oauthRetryCount = 0
+  m.lastOAuthErrorTime = invalid
+  m.oauthRetryTimer = createObject("roSGNode", "Timer")
+  m.oauthRetryTimer.repeat = false
+  m.oauthRetryTimer.duration = 5.0  ' Wait 5 seconds before retrying
+  m.oauthRetryTimer.observeField("fire", "onOAuthRetryTimerFire")
+  
+  ' Start OAuth flow if screen is already visible
+  if m.top.visible = true
+    startOAuthFlow()
+    m.oauthFlowStarted = true
+  end if
 end function
 
-sub onInputUsername()
-  m.field = "username"
-  m.keyboard.text = ""
-  m.keyboard.textEditBox.secureMode = false
-  m.keyboard.visible = true
-  m.keyboard.setFocus(true)
-end sub
-
-sub onInputPassword()
-  m.field = "password"
-  m.keyboard.text = ""
-  m.keyboard.textEditBox.secureMode = true
-  m.keyboard.visible = true
-  m.keyboard.setFocus(true)
-end sub
-
-sub onLoginButton()
-  'print m.username.text
-  'print m.password.text
-  m.login_task = createObject("roSGNode", "loginTask")
-  m.login_task.setField("username", m.username.text)
-  m.login_task.setField("password", m.private)
-  m.login_task.observeField("cookies", "onCookies")
-  m.login_task.observeField("error", "onError")
-  m.login_task.control = "RUN"
-end sub
-
-sub onCookies(obj)
-  'print "login_screen passed?"
-  'print obj
-  print "passed login_screen"
-  m.needstwoFA = m.login_task.needstwoFA
-  if m.needstwoFA = true
-    ? m.needstwoFA
-    preparetwoFALogin()
-  else
-    ? "Couldn't find needs2FA"
-    m.top.next = "beep"
+sub onVisibleChanged(obj)
+  if m.top.visible = true and not m.oauthFlowStarted
+    ' Screen became visible and OAuth flow hasn't started yet
+    ' Reset retry counter when screen becomes visible
+    m.oauthRetryCount = 0
+    m.lastOAuthErrorTime = invalid
+    m.oauthRetryTimer.control = "stop"
+    startOAuthFlow()
+    m.oauthFlowStarted = true
+  else if m.top.visible = false
+    ' Screen hidden - stop OAuth flow and reset flag
+    if m.oauthTask <> invalid
+      m.oauthTask.control = "STOP"
+    end if
+    m.countdownTimer.control = "stop"
+    m.oauthRetryTimer.control = "stop"
+    m.oauthFlowStarted = false
   end if
 end sub
 
-sub preparetwoFALogin()
-  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
-  m.top.getScene().dialog.title = "2FactorAuthentication"
-  m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "2FA code is needed to continue!"
-  setupDialogPalette()
-  m.top.getScene().dialog.observeField("wasClosed", "twoFAClosed")
-  m.top.getScene().dialog.observeField("buttonSelected","getCodeKeyboard")
+sub onNextTimerFire()
+  ' Set next field asynchronously to ensure observer fires
+  time = CreateObject("roDateTime")
+  m.top.next = "beep" + time.AsSeconds().ToStr()
+  print "[PROGRESS] Set next field via timer to: " + m.top.next
+  m.nextTimer.control = "stop"
 end sub
 
-sub twoFAClosed()
-  m.twoFAClosed = true
-end sub
-
-sub getCodeKeyboard()
-  if m.twoFAClosed <> true
-    m.top.getScene().dialog.close = true
+sub onReset()
+  if m.top.reset = true
+    ' Reset state
+    m.showingManualEntry = false
+    m.field = ""
+    
+    ' Clear the next field so it can trigger again
+    m.top.next = ""
+    
+    ' Stop existing OAuth task if running
+    if m.oauthTask <> invalid
+      m.oauthTask.control = "STOP"
+    end if
+    m.countdownTimer.control = "stop"
+    m.oauthRetryTimer.control = "stop"
+    
+    ' Reset retry counter and error tracking
+    m.oauthRetryCount = 0
+    m.lastOAuthErrorTime = invalid
+    
+    ' Reset OAuth flow flag so it can start again
+    m.oauthFlowStarted = false
+    
+    ' Restart OAuth flow
+    startOAuthFlow()
+    m.oauthFlowStarted = true
+    
+    ' Reset the field
+    m.top.reset = false
   end if
-  m.field = "twoFA"
-  m.keyboard.text = ""
-  m.keyboard.textEditBox.secureMode = false
-  m.keyboard.visible = true
-  m.keyboard.setFocus(true)
 end sub
 
-sub dotwoFALogin()
-  token = m.twoFA
-  m.twoFA_task = createObject("roSGNode", "twoFATask")
-  m.twoFA_task.setField("token", token)
-  m.twoFA_task.observeField("updatedCookies", "updatedCs")
-  m.twoFA_task.observeField("error", "ontwoFAError")
-  m.twoFA_task.control = "RUN"
-end sub
-
-sub updatedCs()
-  m.top.next = "beep"
-end sub
-
-sub ontwoFAError(obj)
-  code = obj.getData()
-  showTwoFAErrorDialog()
-  'getCodeKeyboard()
-end sub
-
-sub onError(obj)
-  code = obj.getData()
-  msg = ""
-  if code = "400"
-    'Username too short (at least 4)
-    msg = "Username should be at least 4 characters long!"
-    m.username.text = "derp"
-    m.password.text = "thatwaseasy"
-  else if code = "401"
-    'Incorrect credentials
-    msg = "Wrong username/password combination!"
-    m.username.text = "properusername"
-    m.password.text = "actualpassword"
-  else
-    msg = "Well... This is awkward. I blame you."
-    m.username.text = "idontknow"
-    m.password.text = "wakeup"
+sub refreshQRCode()
+  ' Stop existing OAuth task if running
+  if m.oauthTask <> invalid
+    m.oauthTask.control = "STOP"
   end if
-  showErrorDialog(msg)
+  m.countdownTimer.control = "stop"
+  m.oauthRetryTimer.control = "stop"
+  
+  ' Switch back to timer view
+  m.expirationTimerLabel.text = "Time Remaining:"
+  m.expirationTimer.text = "--:--"
+  m.expirationTimerLabel.visible = true
+  m.expirationTimer.visible = true
+  
+  ' Clear manual entry fields temporarily
+  m.verificationUriLabel.text = ""
+  m.userCodeLabel.text = ""
+  m.orLabel.visible = false
+  m.orLine.visible = false
+  m.orLine2.visible = false
+  m.manualEntryLabel.visible = false
+  m.verificationUriBox.visible = false
+  m.verificationUriLabel.visible = false
+  m.enterCodeLabel.visible = false
+  m.userCodeBox.visible = false
+  m.userCodeLabel.visible = false
+  
+  ' Restart OAuth flow
+  m.oauthFlowStarted = false
+  startOAuthFlow()
+  m.oauthFlowStarted = true
 end sub
+
+sub startOAuthFlow()
+  ' Show QR code by default
+  m.showingManualEntry = false
+  m.qrCode.visible = true
+  ' Show timer
+  m.expirationTimerLabel.text = "Time Remaining:"
+  m.expirationTimerLabel.visible = true
+  m.expirationTimer.visible = true
+  m.expirationTimer.text = "--:--"
+  m.orLabel.visible = false
+  m.orLine.visible = false
+  m.orLine2.visible = false
+  m.manualEntryLabel.visible = false
+  m.verificationUriBox.visible = false
+  m.verificationUriLabel.visible = false
+  m.enterCodeLabel.visible = false
+  m.userCodeBox.visible = false
+  m.userCodeLabel.visible = false
+  
+  ' Start OAuth device flow task
+  m.oauthTask = createObject("roSGNode", "oauthDeviceTask")
+  print "[PROGRESS] Setting up OAuth task observers..."
+  m.oauthTask.observeField("userCode", "onUserCodeReady")
+  m.oauthTask.observeField("verificationUri", "onVerificationUriReady")
+  m.oauthTask.observeField("status", "onOAuthStatusChanged")
+  m.oauthTask.observeField("error", "onOAuthError")
+  m.oauthTask.observeField("expiresIn", "onExpiresInChanged")
+  m.oauthTask.control = "RUN"
+  print "[PROGRESS] OAuth task started"
+end sub
+
+
+sub onUserCodeReady(obj)
+  userCode = obj.getData()
+  if userCode <> invalid and userCode <> ""
+    m.userCodeLabel.text = userCode
+    print "[PROGRESS] User code: " + userCode
+  end if
+end sub
+
+sub onVerificationUriReady(obj)
+  verificationUri = obj.getData()
+  if verificationUri <> invalid and verificationUri <> ""
+    m.verificationUriLabel.text = verificationUri
+    m.orLabel.visible = true
+    m.orLine.visible = true
+    m.orLine2.visible = true
+    m.manualEntryLabel.visible = true
+    m.verificationUriBox.visible = true
+    m.verificationUriLabel.visible = true
+    m.enterCodeLabel.visible = true
+    m.userCodeBox.visible = true
+    m.userCodeLabel.visible = true
+    print "[PROGRESS] Verification URI: " + verificationUri
+  end if
+end sub
+
+sub onOAuthStatusChanged(obj)
+  status = obj.getData()
+  print "[PROGRESS] OAuth status changed: " + status
+  ' If status is QR_CODE_READY, set the QR code text on the component
+  if status = "QR_CODE_READY" and m.oauthTask <> invalid
+    verificationUriComplete = m.oauthTask.verificationUriComplete
+    if verificationUriComplete <> invalid and verificationUriComplete <> ""
+      ' The qrCode node is the library's QRCode component
+      ' Just set the text field - the component will automatically generate the QR code
+      m.qrCode.text = verificationUriComplete
+    end if
+  end if
+  status = obj.getData()
+  if status = "QR_CODE_READY"
+    m.countdownTimer.control = "start"
+    ' Show timer
+    m.expirationTimerLabel.visible = true
+    m.expirationTimer.visible = true
+  else if status = "AUTHENTICATED"
+    m.countdownTimer.control = "stop"
+    m.expirationTimer.text = ""
+    m.expirationTimerLabel.visible = false
+    m.expirationTimer.visible = false
+    ' Proceed to main screen
+    time = CreateObject("roDateTime")
+    nextValue = "beep" + time.AsSeconds().ToStr()
+    m.top.next = nextValue
+    print "[PROGRESS] OAuth authentication complete, proceeding to main screen"
+  end if
+end sub
+
+sub onOAuthError(obj)
+  error = obj.getData()
+  
+  ' Stop countdown timer
+  m.countdownTimer.control = "stop"
+  
+  ' Check if this is a client credential error (401 - invalid_client)
+  ' These shouldn't be auto-retried as they indicate a configuration issue
+  if error <> invalid and error.InStr("invalid_client") >= 0
+    print "[ERROR] OAuth client credential error - not retrying automatically"
+    ' Show error to user instead of auto-retrying
+    showErrorDialog("Authentication error: Invalid client credentials. Please check configuration.")
+    return
+  end if
+  
+  ' For timeout/expired errors, retry with rate limiting
+  if error = "TIMEOUT" or error = "EXPIRED"
+    scheduleOAuthRetry()
+  else if error <> invalid and error <> ""
+    ' For other errors, check rate limit before retrying
+    scheduleOAuthRetry()
+  end if
+end sub
+
+sub scheduleOAuthRetry()
+  ' Rate limiting: prevent rapid retries
+  currentTime = CreateObject("roDateTime")
+  currentTimeSeconds = currentTime.AsSeconds()
+  
+  ' If we retried recently (within last 5 seconds), wait before retrying again
+  if m.lastOAuthErrorTime <> invalid
+    timeSinceLastError = currentTimeSeconds - m.lastOAuthErrorTime
+    if timeSinceLastError < 5
+      print "[OAUTH] Rate limiting: waiting before retry (last error was " + timeSinceLastError.ToStr() + " seconds ago)"
+      ' Start retry timer if not already running
+      if not m.oauthRetryTimer.control = "start"
+        m.oauthRetryTimer.control = "start"
+      end if
+      return
+    end if
+  end if
+  
+  ' Increment retry count
+  m.oauthRetryCount = m.oauthRetryCount + 1
+  m.lastOAuthErrorTime = currentTimeSeconds
+  
+  ' Limit maximum retries to prevent infinite loops
+  if m.oauthRetryCount > 10
+    print "[ERROR] OAuth retry limit reached (" + m.oauthRetryCount.ToStr() + " attempts)"
+    showErrorDialog("Authentication failed after multiple attempts. Please try again later.")
+    m.oauthRetryCount = 0  ' Reset counter
+    return
+  end if
+  
+  print "[OAUTH] Scheduling retry #" + m.oauthRetryCount.ToStr()
+  ' Wait a bit before retrying (exponential backoff: 2^retryCount seconds, max 30 seconds)
+  waitSeconds = 2 ^ m.oauthRetryCount
+  if waitSeconds > 30
+    waitSeconds = 30
+  end if
+  m.oauthRetryTimer.duration = waitSeconds
+  m.oauthRetryTimer.control = "start"
+end sub
+
+sub onOAuthRetryTimerFire()
+  m.oauthRetryTimer.control = "stop"
+  print "[OAUTH] Retrying OAuth flow after delay"
+  refreshQRCode()
+end sub
+
+sub onExpiresInChanged(obj)
+  expiresIn = obj.getData()
+  if expiresIn <> invalid and expiresIn <> ""
+    m.expiresInSeconds = Val(expiresIn)
+  end if
+end sub
+
+sub onCountdownTimerFire()
+  if m.expiresInSeconds <> invalid
+    if m.expiresInSeconds > 0
+      minutes = m.expiresInSeconds \ 60
+      seconds = m.expiresInSeconds mod 60
+      timeText = minutes.ToStr() + ":" + Right("0" + seconds.ToStr(), 2)
+      m.expirationTimer.text = timeText
+      m.expiresInSeconds = m.expiresInSeconds - 1
+    else
+      m.countdownTimer.control = "stop"
+      ' Automatically refresh QR code when timer expires
+      refreshQRCode()
+    end if
+  end if
+end sub
+
+' Manual entry removed - OAuth device flow only
 
 sub showErrorDialog(msg)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
@@ -137,22 +375,8 @@ sub showErrorDialog(msg)
   m.top.getScene().dialog.observeField("buttonSelected","closeDialog")
 end sub
 
-sub showTwoFAErrorDialog()
-  m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
-  m.top.getScene().dialog.title = "2FA Error"
-  m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "Authentication code incorrect! Please try again..."
-  setupDialogPalette()
-  m.top.getScene().dialog.observeField("buttonSelected","closeTwoFAErrorDialog")
-end sub
-
 sub closeDialog()
   m.top.getScene().dialog.close = true
-end sub
-
-sub closeTwoFAErrorDialog()
-  m.top.getScene().dialog.close = true
-  getCodeKeyboard()
 end sub
 
 sub setupDialogPalette()
@@ -162,84 +386,8 @@ sub setupDialogPalette()
 end sub
 
 function onKeyEvent(key as String, press as Boolean) as Boolean
-  if press
-    if key = "up"
-      if m.loginButton.hasFocus()
-        m.loginButton.setFocus(false)
-        m.password.setFocus(true)
-        return true
-      else if m.password.hasFocus()
-        m.password.setFocus(false)
-        m.username.setFocus(true)
-        return true
-      end if
-    else if key = "down"
-      if m.username.hasFocus()
-        m.username.setFocus(false)
-        m.password.setFocus(true)
-        return true
-      else if m.password.hasFocus()
-        m.password.setFocus(false)
-        m.loginButton.setFocus(true)
-        return true
-      end if
-    else if key = "play"
-      if m.field = "username"
-        if m.keyboard.text <> ""
-          m.username.text = m.keyboard.text
-        end if
-        m.keyboard.visible = false
-        m.username.setFocus(true)
-        return true
-      else if m.field = "password"
-        if m.keyboard.text <> ""
-          m.private = m.keyboard.text
-          asterisk = box("****************")
-          length = m.keyboard.text.Len()
-          m.password.text = asterisk.Left(length)
-        end if
-        m.keyboard.visible = false
-        m.password.setFocus(true)
-        return true
-      else if m.field = "twoFA"
-        if m.keyboard.text <> ""
-          m.twoFA = m.keyboard.text
-          m.keyboard.visible = false
-          dotwoFALogin()
-          return true
-        end if
-      end if
-    else if key = "back"
-      if m.keyboard.visible = true
-        if m.field = "username"
-          if m.keyboard.text <> ""
-            m.username.text = m.keyboard.text
-          end if
-          m.keyboard.visible = false
-          m.username.setFocus(true)
-          return true
-        else if m.field = "password"
-          if m.keyboard.text <> ""
-            m.private = m.keyboard.text
-            asterisk = box("****************")
-            length = m.keyboard.text.Len()
-            m.password.text = asterisk.Left(length)
-          end if
-          m.keyboard.visible = false
-          m.password.setFocus(true)
-          return true
-        else if m.field = "twoFA"
-          if m.keyboard.text <> ""
-            m.twoFA = m.keyboard.text
-            m.keyboard.visible = false
-            dotwoFALogin()
-            return true
-          end if
-        end if
-      end if
-    else if key = "ok"
-      return true
-    end if
+  ' No key handling needed - auto-refresh handles everything
   return false
-  end if
 end function
+
+' Old showInstructions function removed - no longer needed

@@ -58,15 +58,15 @@
         'm.itembackground.visible = false
         m.itemtitle.text = "Back"
       end if
-      'Setup progressBar, 100% = 390
+      'Setup progressBar, 100% = 380
       dur = itemcontent.duration
       progress = itemcontent.progress
       if dur <> Invalid AND progress <> Invalid then
         if dur <> 0 then
           if progress >= dur then
-            m.progressbar.width = 389.5
+            m.progressbar.width = 379.5
           else
-            m.progressbar.width = (progress/dur)*389.5
+            m.progressbar.width = (progress/dur)*379.5
           end if
         end if
       else
@@ -90,9 +90,9 @@
       id = "itemPoster" 
       translation = "[ 0, 0 ]" 
       loadDisplayMode = "scaleToFit"
-      width = "390" 
+      width = "380" 
       height = "219" 
-      loadWidth="390"
+      loadWidth="380"
       loadHeight = "219"
       scaleRotateCenter = "[ 256.0, 144.0 ]" >
         <Poster 
@@ -100,9 +100,9 @@
           uri = "pkg:/images/posterOverlay.png"
           translation = "[ 0, 0 ]" 
           loadDisplayMode = "scaleToFit"
-          width = "390" 
+          width = "380" 
           height = "219" 
-          loadWidth="390"
+          loadWidth="380"
           loadHeight = "219"
           visible = "false" > 
         </Poster>
@@ -116,12 +116,12 @@
     <Rectangle
       id="itemBackground"
       color="0x11111100"
-      width="390"
+      width="380"
       height="55"
       translation="[0,226]">
       <ScrollingLabel 
         id="itemTitle"
-        maxWidth="382"
+        maxWidth="372"
         repeatCount="0"
         font="font:SmallestBoldSystemFont"
         translation = "[ 4, 5 ]" />
@@ -134,7 +134,7 @@
         font="font:SmallestSystemFont"
         horizAlign="right"
         width="100"
-        translation="[ 290, 30 ]"/>  
+        translation="[ 280, 30 ]"/>  
     </Rectangle>
   </children>
 </component>

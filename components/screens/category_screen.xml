@@ -53,5 +53,6 @@
       focusBitmapBlendColor="0xFFFFFF50"
       itemComponentName="CreatorGridItem" />
   </children>
+  <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
   <script type="text/brightscript" uri="pkg:/components/screens/category_screen.brs" />
 </component>
