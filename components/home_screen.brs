@@ -696,6 +696,8 @@ sub onProcessAttachedMedia(obj)
 end sub
 
 sub playAttachedMedia()
+  ' Refresh token before playing to ensure we have a valid token after idle periods
+  refreshVideoPlayerToken()
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
@@ -710,6 +712,8 @@ sub onPlayButtonPressed(obj)
   if m.live then
     doLive()
   else
+    ' Refresh token before playing to ensure we have a valid token after idle periods
+    refreshVideoPlayerToken()
     if m.resume then
       m.videoplayer.content.PlayStart = m.videoplayer.content.progress
     else
@@ -753,6 +757,8 @@ end sub
 
 sub loadLiveFloat(obj)
   'Load livestream from Floatplane CDN'
+  ' Refresh token before playing to ensure we have a valid token after idle periods
+  refreshVideoPlayerToken()
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = obj
   videoContent.StreamFormat = "hls"
@@ -772,6 +778,8 @@ end sub
 
 sub loadLiveStuff(obj)
   'Load livestream from 3rd party CDN; doesn't like to load directly, so we have to save it and then read the temporary file'
+  ' Refresh token before playing to ensure we have a valid token after idle periods
+  refreshVideoPlayerToken()
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = "tmp:/live.m3u8"
   videoContent.StreamFormat = "hls"
@@ -790,6 +798,8 @@ sub loadLiveStuff(obj)
 end sub
 
 sub onPlayVideo(obj)
+  ' Refresh token before playing to ensure we have a valid token after idle periods
+  refreshVideoPlayerToken()
   if m.resolution <> invalid then
     cdn = m.info.groups[0].origins[0].url
     uri = ""
@@ -856,6 +866,20 @@ sub initializeVideoPlayer()
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
   m.videoplayer.observeField("state", "onPlayerStateChanged")
+end sub
+
+sub refreshVideoPlayerToken()
+  ' Refresh video player headers with a fresh token before playback
+  ' This ensures we have a valid token even after the app has been idle
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken(false)  ' Allow token refresh
+  if accessToken = invalid then
+    print "[PROGRESS] No access token available for video player, cannot refresh headers"
+    return
+  end if
+  ' Update Authorization header with fresh token
+  m.videoplayer.AddHeader("Authorization", "Bearer " + accessToken)
+  print "[PROGRESS] Video player Authorization header refreshed with new token"
 end sub
 
 sub onPlayerPositionChanged(obj)
