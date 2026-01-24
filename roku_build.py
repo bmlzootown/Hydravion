@@ -147,7 +147,8 @@ def create_zip():
         # Note: "source" directory is required by Roku even if not used, so don't exclude it
         exclude_names = [
             "roku_build.py", "LICENSE", "openid-configuration.json",
-            ".github", ".vscode", "dist", "out", ".gitignore", ".git"
+            ".github", ".vscode", "dist", "out", ".gitignore", ".git",
+            "test_deeplink.sh", "test_deeplink.py"
         ]
         
         # File extensions and patterns to exclude
@@ -174,7 +175,7 @@ def create_zip():
                 # Check if file name matches exclude patterns
                 if not should_exclude:
                     filename = rel_path.name.lower()
-                    if filename == "makefile" or filename.startswith("storeassets") or filename.startswith("keys"):
+                    if filename == "makefile" or filename.startswith("storeassets") or filename.startswith("keys") or filename.startswith("test_"):
                         should_exclude = True
                 
                 # Check if any parent directory or the file itself matches exclude_names

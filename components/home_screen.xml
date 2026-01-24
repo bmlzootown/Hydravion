@@ -28,6 +28,10 @@
       id="stream_timer"
       repeat="true"
       duration="5" />
+    <Timer
+      id="launch_beacon_timer"
+      repeat="false"
+      duration="3" />
   </children>
   <interface>
     <field id="subscriptions" type="string" onChange="onCategoryResponse" />

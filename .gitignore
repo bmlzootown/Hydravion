@@ -9,3 +9,5 @@ out*
 components/pasteyTask.brs
 components/pasteyTask.xml
 openid-configuration.json
+test_deeplink.sh
+test_deeplink.py
