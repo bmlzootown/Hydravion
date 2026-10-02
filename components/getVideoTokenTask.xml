@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="getVideoTokenTask" extends="task">
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <script type="text/brightscript" uri="pkg:/components/tokenUtil.brs" />
+  <interface>
+    <field id="accessToken" type="string" />
+    <field id="error" type="string" />
+    <field id="done" type="boolean" value="false" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/getVideoTokenTask.brs" />
+</component>

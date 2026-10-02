@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="validateTokenTask" extends="task">
+  <script type="text/brightscript" uri="pkg:/components/registry.brs" />
+  <script type="text/brightscript" uri="pkg:/components/tokenUtil.brs" />
+  <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
+  <interface>
+    <field id="isValid" type="boolean" value="false" />
+    <field id="error" type="string" />
+    <field id="done" type="boolean" value="false" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/validateTokenTask.brs" />
+</component>

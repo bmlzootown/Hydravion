@@ -1,6 +1,12 @@
 '********************************************************************
 '**  TokenUtil - OAuth Token Management
 '********************************************************************
+'**  Testing token validity:
+'**  - Time-based: isTokenExpired() / isAuthenticated() use stored token_expires_at
+'**    (from server's expires_in). Fast, no network; does not detect server revocation.
+'**  - Server-based: Run validateTokenTask; when done, check task.isValid. True only
+'**    if the server returns 200 for an authenticated request (catches revocation).
+'********************************************************************
 
 function TokenUtil() as Object
     tokenUtilObj = {
@@ -45,7 +51,9 @@ function TokenUtil() as Object
             return accessToken
         end function
         
-        '** Check if access token is expired
+        '** Check if access token is expired (time-based, no network)
+        '   Uses token_expires_at stored from server's expires_in when token was issued/refreshed.
+        '   For authoritative validity (e.g. detect revocation), use validateTokenTask instead.
         '@return true if expired or missing, false if valid
         isTokenExpired: function() as Boolean
             registry = RegistryUtil()

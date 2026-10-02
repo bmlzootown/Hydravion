@@ -40,29 +40,43 @@ function init()
   version = appInfo.getVersion()
   m.useragent = "Hydravion (Roku) v" + version
 
-  ' Check for Bearer token using TokenUtil
+  ' Check for Bearer token using TokenUtil (time-based)
   tokenUtilObj = TokenUtil()
   if tokenUtilObj.isAuthenticated() then
-    'Check whether token is set, if not we login. If found, we head over to onNext()
-    m.login_screen.visible = false
-    ' Set next field to trigger the login flow (onNext checks for "beep" prefix)
-    time = CreateObject("roDateTime")
-    m.login_screen.next = "beep" + time.AsSeconds().ToStr()
-    ' The observer will fire and call onNext automatically
+    ' Validate token with server (200 = valid, 401 = revoked/invalid); then proceed or show login
+    m.startupValidateTask = CreateObject("roSGNode", "validateTokenTask")
+    m.top.appendChild(m.startupValidateTask)
+    m.startupValidateTask.observeField("done", "onStartupTokenValidated")
+    m.startupValidateTask.control = "RUN"
   else
-    ' No token, show login screen directly
-    ' Fire AppDialogInitiate beacon when login dialog is shown before home page
-    m.top.signalBeacon("AppDialogInitiate")
-    m.loginDialogBeaconFired = true
-    m.login_screen.visible = true
-    m.login_screen.setFocus(true)
-    
-    ' Start fallback timer to fire AppLaunchComplete beacon after 3 seconds
-    ' This ensures tests can detect the beacon even if they can't complete OAuth login
-    ' The timer will be cancelled if login completes and home screen is shown normally
-    m.launchBeaconTimer.control = "start"
+    showLoginScreen()
   end if
 end function
+
+sub showLoginScreen()
+  m.top.signalBeacon("AppDialogInitiate")
+  m.loginDialogBeaconFired = true
+  m.login_screen.visible = true
+  m.login_screen.setFocus(true)
+  m.launchBeaconTimer.control = "start"
+end sub
+
+sub onStartupTokenValidated(obj)
+  task = obj.getRoSGNode()
+  if task = invalid or task.done <> true then
+    return
+  end if
+  task.unobserveField("done")
+  m.startupValidateTask = invalid
+  if task.isValid = true then
+    m.login_screen.visible = false
+    time = CreateObject("roDateTime")
+    m.login_screen.next = "beep" + time.AsSeconds().ToStr()
+  else
+    print "[TOKEN] Startup validation failed: " + task.error
+    showLoginScreen()
+  end if
+end sub
 
 sub onDeepLinking(obj)
   contentId = obj.getData()
@@ -771,8 +785,10 @@ sub onProcessAttachedMedia(obj)
 end sub
 
 sub playAttachedMedia()
-  ' Refresh token before playing to ensure we have a valid token after idle periods
-  refreshVideoPlayerToken()
+  requestVideoTokenThenPlay("playAttachedMedia", invalid)
+end sub
+
+sub doPlayAttachedMediaContinue()
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
@@ -787,24 +803,24 @@ sub onPlayButtonPressed(obj)
   if m.live then
     doLive()
   else
-    ' Refresh token before playing to ensure we have a valid token after idle periods
-    refreshVideoPlayerToken()
-    if m.resume then
-      m.videoplayer.content.PlayStart = m.videoplayer.content.progress
-    else
-      m.videoplayer.content.PlayStart = 0
-    end if
-    m.resume = false
-    'Prebuffering currently DISABLED
-    'Video is already prebuffered, we just need to hide the detail screen, focus on the video player, and play the video
-    m.details_screen.visible = false
-    m.details_screen.setFocus(false)
-    m.videoplayer.visible = true
-    m.videoplayer.setFocus(true)
-    m.videoplayer.control = "play"
-    if m.video_task <> invalid
-      m.playButtonPressed = true
-    end if
+    requestVideoTokenThenPlay("playButton", invalid)
+  end if
+end sub
+
+sub doPlayButtonContinue()
+  if m.resume then
+    m.videoplayer.content.PlayStart = m.videoplayer.content.progress
+  else
+    m.videoplayer.content.PlayStart = 0
+  end if
+  m.resume = false
+  m.details_screen.visible = false
+  m.details_screen.setFocus(false)
+  m.videoplayer.visible = true
+  m.videoplayer.setFocus(true)
+  m.videoplayer.control = "play"
+  if m.video_task <> invalid
+    m.playButtonPressed = true
   end if
 end sub
 
@@ -830,31 +846,32 @@ sub doLive()
   end if
 end sub
 
-sub loadLiveFloat(obj)
-  'Load livestream from Floatplane CDN'
-  ' Refresh token before playing to ensure we have a valid token after idle periods
-  refreshVideoPlayerToken()
+sub loadLiveFloat(urlOrObj)
+  ' urlOrObj is the stream URL string when called from doLive()
+  requestVideoTokenThenPlay("loadLiveFloat", { url: urlOrObj })
+end sub
+
+sub doLoadLiveFloatContinue(url as String)
   videoContent = createObject("roSGNode", "ContentNode")
-  videoContent.url = obj
+  videoContent.url = url
   videoContent.StreamFormat = "hls"
   time = CreateObject("roDateTime")
   now = time.AsSeconds()
   videoContent.PlayStart = now + 999999
   videoContent.live = true
-
   m.content_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
-  'm.videoplayer.seek = m.videoplayer.pauseBufferEnd
   m.videoplayer.seek = 999999
 end sub
 
 sub loadLiveStuff(obj)
-  'Load livestream from 3rd party CDN; doesn't like to load directly, so we have to save it and then read the temporary file'
-  ' Refresh token before playing to ensure we have a valid token after idle periods
-  refreshVideoPlayerToken()
+  requestVideoTokenThenPlay("loadLiveStuff", invalid)
+end sub
+
+sub doLoadLiveStuffContinue()
   videoContent = createObject("roSGNode", "ContentNode")
   videoContent.url = "tmp:/live.m3u8"
   videoContent.StreamFormat = "hls"
@@ -862,19 +879,19 @@ sub loadLiveStuff(obj)
   now = time.AsSeconds()
   videoContent.PlayStart = now + 999999
   videoContent.live = true
-
   m.content_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
-  'm.videoplayer.seek = m.videoplayer.pauseBufferEnd
   m.videoplayer.seek = 999999
 end sub
 
 sub onPlayVideo(obj)
-  ' Refresh token before playing to ensure we have a valid token after idle periods
-  refreshVideoPlayerToken()
+  requestVideoTokenThenPlay("onPlayVideo", invalid)
+end sub
+
+sub doOnPlayVideoContinue()
   if m.resolution <> invalid then
     cdn = m.info.groups[0].origins[0].url
     uri = ""
@@ -885,7 +902,6 @@ sub onPlayVideo(obj)
     end for
     m.selected_media.url = cdn + uri
   end if
-
   m.details_screen.visible = false
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
@@ -943,18 +959,58 @@ sub initializeVideoPlayer()
   m.videoplayer.observeField("state", "onPlayerStateChanged")
 end sub
 
-sub refreshVideoPlayerToken()
-  ' Refresh video player headers with a fresh token before playback
-  ' This ensures we have a valid token even after the app has been idle
-  tokenUtilObj = TokenUtil()
-  accessToken = tokenUtilObj.getAccessToken(false)  ' Allow token refresh
-  if accessToken = invalid then
-    print "[PROGRESS] No access token available for video player, cannot refresh headers"
+' Request a video token in a Task (so refresh can run off render thread), then run the given play action when done.
+sub requestVideoTokenThenPlay(action as String, playData as Dynamic)
+  m.pendingPlayAction = action
+  m.pendingPlayData = playData
+  task = CreateObject("roSGNode", "getVideoTokenTask")
+  m.videoTokenTask = task
+  m.top.getScene().appendChild(task)
+  task.observeField("done", "onVideoTokenReady")
+  task.control = "RUN"
+end sub
+
+sub onVideoTokenReady(obj)
+  task = obj.getRoSGNode()
+  if task = invalid or task.done <> true then
     return
   end if
-  ' Update Authorization header with fresh token
+  task.unobserveField("done")
+  accessToken = task.accessToken
+  errMsg = task.error
+  action = m.pendingPlayAction
+  playData = m.pendingPlayData
+  m.pendingPlayAction = invalid
+  m.pendingPlayData = invalid
+  m.videoTokenTask = invalid
+  if accessToken = invalid or accessToken = "" then
+    print "[PROGRESS] No access token for video player: " + errMsg
+    showMessageDialog("Playback", "Not authenticated. Please log in again.")
+    return
+  end if
   m.videoplayer.AddHeader("Authorization", "Bearer " + accessToken)
-  print "[PROGRESS] Video player Authorization header refreshed with new token"
+  print "[PROGRESS] Video player Authorization header set, continuing play"
+  if action = "playAttachedMedia" then
+    doPlayAttachedMediaContinue()
+  else if action = "playButton" then
+    doPlayButtonContinue()
+  else if action = "loadLiveFloat" and playData <> invalid and playData.url <> invalid then
+    doLoadLiveFloatContinue(playData.url)
+  else if action = "loadLiveStuff" then
+    doLoadLiveStuffContinue()
+  else if action = "onPlayVideo" then
+    doOnPlayVideoContinue()
+  end if
+end sub
+
+' Sync helper for init only (no refresh on render thread).
+sub refreshVideoPlayerToken()
+  tokenUtilObj = TokenUtil()
+  accessToken = tokenUtilObj.getAccessToken(true)
+  if accessToken = invalid then
+    return
+  end if
+  m.videoplayer.AddHeader("Authorization", "Bearer " + accessToken)
 end sub
 
 sub onPlayerPositionChanged(obj)
