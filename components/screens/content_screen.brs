@@ -26,7 +26,9 @@ end sub
 sub showpostergrid(content)
   m.content_grid.content = content
   m.content_grid.visible = true
-  m.content_grid.setFocus(true)
+  if m.top.visible = true then
+    m.content_grid.setFocus(true)
+  end if
   m.cover.uri = m.top.category_node.HDPOSTERURL
   'm.icon.uri = m.top.category_node.icon
   m.icon.imageUri = m.top.category_node.icon

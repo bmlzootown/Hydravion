@@ -27,6 +27,8 @@ function init()
 
   m.itemFocus = 0
   m.waitingForLiveAutoplay = false
+  m.deepLinkActive = false
+  m.pendingStartupNav = false
 
   m.supported = m.device.GetSupportedGraphicsResolutions()
   
@@ -86,6 +88,9 @@ sub onDeepLinking(obj)
 end sub
 
 sub playDeepLinkTest()
+  ' Certification watches the focused node for player events. Keep the player
+  ' up until the user leaves; do not fall through to the browse grid.
+  m.deepLinkActive = true
   if m.top.dialog <> invalid then m.top.dialog.close = true
   m.login_screen.visible = false
   m.category_screen.visible = false
@@ -104,13 +109,30 @@ sub playDeepLinkTest()
   videoContent.title = "Deep link test"
   videoContent.StreamFormat = "mp4"
   m.videoplayer.visible = true
-  m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
+  m.videoplayer.setFocus(true)
 
   'Required for deep linking - fire AppLaunchComplete when video playback begins
-  m.top.signalBeacon("AppLaunchComplete")
+  if not m.appLaunchCompleteFired
+    m.top.signalBeacon("AppLaunchComplete")
+    m.appLaunchCompleteFired = true
+  end if
   print "[DEEPLINK] AppLaunchComplete beacon fired for deep link"
+end sub
+
+sub endDeepLinkPlayback()
+  m.deepLinkActive = false
+  m.videoplayer.control = "stop"
+  m.videoplayer.visible = false
+  if m.pendingStartupNav = true
+    m.pendingStartupNav = false
+    showUpdateDialog()
+    getSubs("")
+  else
+    m.content_screen.visible = true
+    m.content_screen.setFocus(true)
+  end if
 end sub
 
 sub onRowInput(obj)
@@ -152,6 +174,12 @@ sub onNext(obj)
     m.loginDialogBeaconFired = false
   end if
   m.login_screen.visible = false
+  ' A deep link is already playing. Loading the browse UI here steals focus
+  ' from the player and fails certification tests 5.1 and 3.6.
+  if m.deepLinkActive = true
+    m.pendingStartupNav = true
+    return
+  end if
   'Now that we have cookies, we can initialize the video/live player
   initializeVideoPlayer()
 
@@ -204,6 +232,10 @@ end sub
 sub showHomeScreen()
   ' Helper function to show home screen and fire AppLaunchComplete beacon
   ' This ensures the beacon fires in all code paths that reach the home screen
+  if m.deepLinkActive = true
+    m.pendingStartupNav = true
+    return
+  end if
   m.category_screen.visible = true
   m.category_screen.setFocus(true)
   
@@ -258,6 +290,7 @@ sub onCategorySetup(obj)
     m.category_screen.FindNode("category_list").content.appendChild(node)
   end if
   'm.category_screen.findNode("channel_list").content = obj.getData()
+  if m.deepLinkActive = true then return
   m.category_screen.setFocus(true)
 end sub
 
@@ -442,6 +475,7 @@ sub onFeedSetup(obj)
   'Feed node has been setup, show it to user
   m.content_screen.setField("page", m.feedpage)
   m.content_screen.setField("feed_node", obj.getData())
+  if m.deepLinkActive = true then return
   m.category_screen.visible = false
   m.content_screen.visible = true
 end sub
@@ -1128,6 +1162,16 @@ end sub
 sub onPlayerStateChanged(obj)
   ? "State: ", obj.getData()
   state = obj.getData()
+  if m.deepLinkActive = true
+    if state = "finished"
+      m.videoplayer.control = "play"
+    else if state = "error"
+      error = "[Error " + m.videoplayer.errorCode.ToStr() + "] " + m.videoplayer.errorMsg
+      ? error
+      showVideoError(m.videoplayer.errorCode.ToStr(), m.videoplayer.errorMsg)
+    end if
+    return
+  end if
   if state = "stopped"
     closeVideo()
     if m.selected_media <> Invalid AND m.selected_media.id <> "live"
@@ -1388,6 +1432,7 @@ sub doLogout()
 end sub
 
 sub showUpdateDialog()
+  if m.deepLinkActive = true then return
   'Check whether to show update dialog'
   registry = RegistryUtil()
   version = registry.read("version", "hydravion")
@@ -1481,13 +1526,17 @@ function onKeyEvent(key, press) as Boolean
       return true
     else if m.videoplayer.visible
       m.resolution = invalid
-      m.videoplayer.control = "stop"
-      m.videoplayer.visible = false
-      m.content_screen.visible = true
       m.details_screen.visible = false
-      m.content_screen.setFocus(true)
-      m.content_screen.FindNode("content_grid").setFocus(true)
       m.playButtonPressed = false
+      if m.deepLinkActive = true
+        endDeepLinkPlayback()
+      else
+        m.videoplayer.control = "stop"
+        m.videoplayer.visible = false
+        m.content_screen.visible = true
+        m.content_screen.setFocus(true)
+        m.content_screen.FindNode("content_grid").setFocus(true)
+      end if
       return true
     else if m.content_screen.visible
       m.waitingForLiveAutoplay = false
