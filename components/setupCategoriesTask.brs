@@ -63,38 +63,38 @@ function getCreatorInfo(creator) as String
   xfer.AddHeader("User-Agent", useragent)
   xfer.AddHeader("Authorization", "Bearer " + accessToken)
   xfer.initClientCertificates()
+  xfer.RetainBodyOnError(true)
+  port = CreateObject("roMessagePort")
+  xfer.SetMessagePort(port)
   apiConfigObj = ApiConfig()
   xfer.SetUrl(apiConfigObj.buildApiUrl("/api/v3/creator/info?id=" + creator))
 
-  return xfer.GetToString()
+  result = ""
+  if xfer.AsyncGetToString()
+    event = wait(10000, port)
+    if type(event) = "roUrlEvent" and event.GetResponseCode() = 200
+      result = event.GetString()
+    end if
+  end if
+  return result
 end function
 
 function getImageUrl(creator) as String
-  appInfo = createObject("roAppInfo")
-  version = appInfo.getVersion()
-  useragent = "Hydravion (Roku) v" + version
-
-  ' Get Bearer token using TokenUtil
-  tokenUtilObj = TokenUtil()
-  accessToken = tokenUtilObj.getAccessToken()
-  if accessToken = invalid then
+  jsonStr = getCreatorInfo(creator)
+  if jsonStr = "" then
     return ""
   end if
-
-  xfer = CreateObject("roUrlTransfer")
-  xfer.setCertificatesFile("common:/certs/ca-bundle.crt")
-  xfer.AddHeader("Accept", "application/json")
-  xfer.AddHeader("User-Agent", useragent)
-  xfer.AddHeader("Authorization", "Bearer " + accessToken)
-  xfer.initClientCertificates()
-  apiConfigObj = ApiConfig()
-  xfer.SetUrl(apiConfigObj.buildApiUrl("/api/v3/creator/info?id=" + creator))
-  subInfo = ParseJSON(xfer.GetToString())
-
-  if subInfo[0].cover.childImages[0].path <> invalid
+  subInfo = ParseJSON(jsonStr)
+  if subInfo = invalid or subInfo.Count() = 0 then
+    return ""
+  end if
+  if subInfo[0].cover <> invalid and subInfo[0].cover.childImages <> invalid and subInfo[0].cover.childImages[0] <> invalid and subInfo[0].cover.childImages[0].path <> invalid
     return subInfo[0].cover.childImages[0].path
   end if
-  return subInfo[0].icon.childImages[0].path
+  if subInfo[0].icon <> invalid and subInfo[0].icon.childImages <> invalid and subInfo[0].icon.childImages[0] <> invalid
+    return subInfo[0].icon.childImages[0].path
+  end if
+  return ""
 end function
 
 function loadCacheImage(url) as String
