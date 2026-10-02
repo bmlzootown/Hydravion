@@ -82,19 +82,32 @@ end sub
 sub onDeepLinking(obj)
   contentId = obj.getData()
   print "[DEEPLINK] onDeepLinking called with ContentId: " + contentId
-  
-  'showTestDialog()
+  playDeepLinkTest()
+end sub
+
+sub playDeepLinkTest()
+  if m.top.dialog <> invalid then m.top.dialog.close = true
+  m.login_screen.visible = false
+  m.category_screen.visible = false
+  m.content_screen.visible = false
+  m.details_screen.visible = false
+
+  ' HTTPS playback fails with error -1 unless the player has the CA bundle.
+  m.videoplayer.setCertificatesFile("common:/certs/ca-bundle.crt")
+  m.videoplayer.initClientCertificates()
+  m.videoplayer.SetConnectionTimeout(30)
   m.videoplayer.notificationInterval = 1
   m.videoplayer.observeField("position", "onPlayerPositionChanged")
   m.videoplayer.observeField("state", "onPlayerStateChanged")
   videoContent = createObject("roSGNode", "ContentNode")
-  videoContent.url = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+  videoContent.url = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+  videoContent.title = "Deep link test"
   videoContent.StreamFormat = "mp4"
   m.videoplayer.visible = true
   m.videoplayer.setFocus(true)
   m.videoplayer.content = videoContent
   m.videoplayer.control = "play"
-  
+
   'Required for deep linking - fire AppLaunchComplete when video playback begins
   m.top.signalBeacon("AppLaunchComplete")
   print "[DEEPLINK] AppLaunchComplete beacon fired for deep link"
@@ -105,8 +118,12 @@ sub onRowInput(obj)
 end sub
 
 sub onRoInput(obj)
-  ' Handle roInputEvent from main.brs
-  ' Currently not implemented
+  ' Launch while the channel is already running arrives as roInput, not Main() args.
+  info = obj.getData()
+  if type(info) <> "roAssociativeArray" then return
+  if info.contentId = invalid or info.contentId = "" then return
+  print "[DEEPLINK] roInput contentId: " + info.contentId
+  playDeepLinkTest()
 end sub
 
 

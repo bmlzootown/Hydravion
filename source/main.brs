@@ -1,7 +1,7 @@
 sub Main(args as Dynamic)
   screen = createObject("roSGScreen")
   port = createObject("roMessagePort")
-  screen.setMessageport(m.port)
+  screen.setMessagePort(port)
   scene = screen.createScene("home_screen")
   scene.observeField("exit", port)
   screen.Show() 
