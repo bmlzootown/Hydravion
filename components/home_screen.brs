@@ -469,31 +469,20 @@ end sub
 
 sub onPostInfo(obj)
   info = ParseJSON(obj.getData())
-  m.selected_media.userInteraction = info.userInteraction
-  m.selected_media.videoAttachments = info.videoAttachments
-  m.selected_media.audioAttachments = info.audioAttachments
-  m.selected_media.pictureAttachments = info.pictureAttachments
-  
-  ' Update description and duration from post response if available
-  if info.text <> invalid then
-    m.selected_media.description = removeHtmlTags(info.text)
-  else if info.description <> invalid then
-    m.selected_media.description = removeHtmlTags(info.description)
+  if type(info) <> "roAssociativeArray"
+    showMessageDialog("Error", "Could not read this post.")
+    return
   end if
-  if info.metadata <> invalid and info.metadata.videoDuration <> invalid then
-    m.selected_media.duration = info.metadata.videoDuration
-  end if
-  '? m.selected_media
 
-  if m.selected_media.hasVideo = true
-    ' Skip the old /api/video/info endpoint and go directly to getting delivery info
-    ' We'll extract resolution info from the delivery/info response
+  applyPostDetail(info)
+
+  if m.selected_media.postId <> invalid and m.selected_media.postId <> "" and (m.selected_media.hasVideo = true or m.selected_media.hasAudio = true)
     getProgress = CreateObject("roSGNode", "postTask")
     apiConfigObj = ApiConfig()
     url = apiConfigObj.buildApiUrl("/api/v3/content/get/progress")
     data = {
-      "ids":[m.selected_media.guid],
-      "contentType": "video"
+      "ids": [m.selected_media.postId],
+      "contentType": "blogPost"
     }
     getProgress.setField("url", url)
     getProgress.setField("body", data)
@@ -501,12 +490,71 @@ sub onPostInfo(obj)
     getProgress.observeField("error", "gotProgressError")
     getProgress.control = "RUN"
   else
-    m.selected_media.description = removeHtmlTags(m.selected_media.description)
-    m.details_screen.content = m.selected_media
-    m.content_screen.visible = false
-    m.details_screen.visible = true
-    m.details_screen.setFocus(true)
+    showPostDetails()
   end if
+end sub
+
+sub applyPostDetail(info as Object)
+  m.selected_media.userInteraction = contentUserInteractions(info)
+  if type(info.videoAttachments) = "roArray" then m.selected_media.videoAttachments = info.videoAttachments
+  if type(info.audioAttachments) = "roArray" then m.selected_media.audioAttachments = info.audioAttachments
+  if type(info.pictureAttachments) = "roArray" then m.selected_media.pictureAttachments = info.pictureAttachments
+  if type(info.attachmentOrder) = "roArray" then m.selected_media.attachments = info.attachmentOrder
+  if contentIsNumber(info.likes) then m.selected_media.likes = info.likes
+  if contentIsNumber(info.dislikes) then m.selected_media.dislikes = info.dislikes
+
+  body = contentPostBody(info)
+  if body <> "" then m.selected_media.description = removeHtmlTags(body)
+
+  if info.isAccessible = false
+    m.selected_media.isAccessible = false
+    m.selected_media.hasVideo = false
+    m.selected_media.hasAudio = false
+  else
+    m.selected_media.isAccessible = true
+    if type(info.metadata) = "roAssociativeArray"
+      if info.metadata.hasVideo = true then m.selected_media.hasVideo = true
+      if info.metadata.hasAudio = true then m.selected_media.hasAudio = true
+      if info.metadata.hasPicture = true then m.selected_media.hasPicture = true
+    end if
+  end if
+
+  if type(info.metadata) = "roAssociativeArray"
+    duration = contentPostDurationSeconds(info.metadata)
+    if duration > 0 then m.selected_media.duration = duration
+  end if
+
+  ' Delivery and playback use the attachment id. The creator list no longer includes it.
+  if m.selected_media.isAccessible = true
+    videoId = contentFirstAttachmentId(info.videoAttachments)
+    if videoId <> ""
+      m.selected_media.guid = videoId
+      m.selected_media.hasVideo = true
+      m.selected_media.streamformat = "hls"
+    else if m.selected_media.hasVideo <> true
+      audioId = contentFirstAttachmentId(info.audioAttachments)
+      if audioId <> ""
+        m.selected_media.guid = audioId
+        m.selected_media.hasAudio = true
+      end if
+    end if
+  end if
+
+  if m.selected_media.duration = invalid or m.selected_media.duration = 0
+    attachmentDuration = contentFirstAttachmentDuration(info.videoAttachments)
+    if attachmentDuration = 0 then attachmentDuration = contentFirstAttachmentDuration(info.audioAttachments)
+    if attachmentDuration > 0 then m.selected_media.duration = attachmentDuration
+  end if
+end sub
+
+sub showPostDetails()
+  if m.selected_media.description <> invalid
+    m.selected_media.description = removeHtmlTags(m.selected_media.description)
+  end if
+  m.details_screen.content = m.selected_media
+  m.content_screen.visible = false
+  m.details_screen.visible = true
+  m.details_screen.setFocus(true)
 end sub
 
 sub onRequestError(obj)
@@ -586,15 +634,23 @@ end sub
 
 sub gotProgress(obj)
   progress = ParseJson(obj.getData())
-  if progress[0] <> Invalid
-    m.selected_media.progress = progress[0].progress
+  if type(progress) = "roArray" and progress.Count() > 0 and type(progress[0]) = "roAssociativeArray"
+    m.selected_media.progress = contentProgressToSeconds(progress[0].progress, m.selected_media.duration)
   end if
-  doPreProcessVideoSelected()
+  continueAfterPostProgress()
 end sub
 
 sub gotProgressError(obj)
-  m.selected_media.progress = "0"
-  doPreProcessVideoSelected()
+  m.selected_media.progress = 0
+  continueAfterPostProgress()
+end sub
+
+sub continueAfterPostProgress()
+  if m.selected_media.hasVideo = true and m.selected_media.guid <> invalid and m.selected_media.guid <> ""
+    doPreProcessVideoSelected()
+  else
+    showPostDetails()
+  end if
 end sub
 
 sub doPreProcessVideoSelected()
@@ -936,6 +992,13 @@ sub doOnPlayVideoContinue()
   m.videoplayer.control = "play"
 end sub
 
+function playbackContentType() as String
+  if m.selected_media = invalid then return "video"
+  if m.selected_media.isAudio = true then return "audio"
+  if m.selected_media.hasAudio = true and m.selected_media.hasVideo <> true then return "audio"
+  return "video"
+end function
+
 sub setProgress(contentType as String, guid as String, position as Integer)
   videoProgress = CreateObject("roSGNode", "postTask")
   apiConfigObj = ApiConfig()
@@ -1053,13 +1116,7 @@ sub onPlayerStateChanged(obj)
     if m.selected_media <> Invalid AND m.selected_media.id <> "live"
       if m.playerPosition <> Invalid
         'Update progress, then update progressBar by refreshing individual video node
-        contentType = "video"
-        if m.selected_media.isVideo = true then
-          contentType = "video"
-        else if m.selected_media.isAudio = true then
-          contentType = "audio"
-        end if
-        setProgress(contentType, m.selected_media.guid, m.playerPosition)
+        setProgress(playbackContentType(), m.selected_media.guid, m.playerPosition)
         updateSelectedMediaProgressBar(m.playerPosition)
       end if
     end if
@@ -1069,11 +1126,7 @@ sub onPlayerStateChanged(obj)
       ? m.selected_media
       if m.selected_media <> Invalid AND m.selected_media.id <> "live"
         'Update progress, then update progressBar by refreshing individual video node
-        contentType = "video"
-        if m.selected_media.isAudio = true then
-          contentType = "audio"
-        end if
-        setProgress(contentType, m.selected_media.guid, m.selected_media.duration + 1)
+        setProgress(playbackContentType(), m.selected_media.guid, m.selected_media.duration + 1)
         updateSelectedMediaProgressBar(m.selected_media.duration + 1)
       end if
       closeVideo()
@@ -1158,13 +1211,7 @@ end sub
 sub handleDetailOptions(obj)
   buttons = m.top.getScene().dialog.buttons
   selectedButton = m.top.getScene().dialog.buttonSelected
-  'Determine contentType 
-  contentType = "video"
-  if m.selected_media.isVideo = true then
-    contentType = "video"
-  else if m.selected_media.isAudio = true then
-    contentType = "audio"
-  end if
+  contentType = playbackContentType()
 
   if buttons[selectedButton] = "Select Resolution"
     'Select Resolution

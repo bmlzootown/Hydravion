@@ -15,6 +15,20 @@ sub init()
   m.dislike_button.observeField("buttonSelected", "onDislikeButtonPressed")
 end sub
 
+sub fillAttachment(attachment as Object, raw as Dynamic, fallbackTitle as String, fallbackPoster as String)
+  attachment.title = fallbackTitle
+  attachment.HDPOSTERURL = fallbackPoster
+  id = contentAttachmentId(raw)
+  attachment.id = id
+  attachment.guid = id
+  if type(raw) = "roAssociativeArray"
+    if contentIsString(raw.title) and raw.title <> "" then attachment.title = raw.title
+    poster = contentImagePath(raw.thumbnail)
+    if poster <> "" then attachment.HDPOSTERURL = poster
+    if contentIsNumber(raw.duration) and raw.duration > 0 then attachment.duration = Int(raw.duration)
+  end if
+end sub
+
 sub onVisibleChange()
   if m.top.visible = true THEN
     if m.play_button.visible = false
@@ -78,26 +92,21 @@ sub OnContentChange(obj)
     end if
   end if
 
-  'Add attachments to row
+  'Add attachments to row. Detail payloads are objects; older list payloads were string ids.
   m.attachments = CreateObject("roSGNode", "ContentNode")
-  if item.hasVideo = true then
+  if item.hasVideo = true and type(item.videoAttachments) = "roArray" then
     for each vid in item.videoAttachments
       attachment = CreateObject("roSGNode", "media_node")
-      attachment.title = vid.title
-      attachment.id = vid.id
-      attachment.guid = vid.id
+      fillAttachment(attachment, vid, "Video", item.HDPOSTERURL)
       attachment.isVideo = true
       attachment.isAudio = false
-      attachment.HDPOSTERURL = vid.thumbnail.path
       m.attachments.appendChild(attachment)
     end for
   end if
-  if item.hasAudio = true then
+  if item.hasAudio = true and type(item.audioAttachments) = "roArray" then
     for each aud in item.audioAttachments
       attachment = CreateObject("roSGNode", "media_node")
-      attachment.title = aud.title
-      attachment.id = aud.id
-      attachment.guid = aud.id
+      fillAttachment(attachment, aud, "Audio", "pkg:/images/sound-poster.png")
       attachment.isVideo = false
       attachment.isAudio = true
       attachment.HDPOSTERURL = "pkg:/images/sound-poster.png"

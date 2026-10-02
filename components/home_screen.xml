@@ -3,6 +3,7 @@
   <script type="text/brightscript" uri="pkg:/components/registry.brs" />
   <script type="text/brightscript" uri="pkg:/components/tokenUtil.brs" />
   <script type="text/brightscript" uri="pkg:/components/apiConfig.brs" />
+  <script type="text/brightscript" uri="pkg:/components/contentShape.brs" />
   <children>
     <login_screen
       id="login_screen"

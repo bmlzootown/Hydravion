@@ -18,6 +18,7 @@
         	type="node"
         	alias="attachmentsList.itemSelected" />
 	</interface>
+	<script type="text/brightscript" uri="pkg:/components/contentShape.brs" />
 	<script type="text/brightscript" uri="pkg:/components/screens/details_screen.brs" />
 	<children>
     <Poster
