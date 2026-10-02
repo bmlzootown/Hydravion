@@ -123,6 +123,40 @@ def check_roku_target():
         return False
 
 
+# Roku rejects any other top-level directory as extraneous.
+ALLOWED_PACKAGE_ROOTS = {"manifest", "source", "components", "images", "fonts", "locale"}
+
+
+def should_exclude_from_package(rel_path):
+    """True for paths Roku must not see in the channel zip."""
+    if not rel_path.parts or rel_path.parts[0] not in ALLOWED_PACKAGE_ROOTS:
+        return True
+    if "__pycache__" in rel_path.parts:
+        return True
+    # Files and directories to exclude by name (exact matches in path parts).
+    exclude_names = [
+        "roku_build.py", "LICENSE", "openid-configuration.json",
+        ".github", ".vscode", "dist", "out", ".gitignore", ".git",
+        "test_deeplink.sh", "test_deeplink.py"
+    ]
+    exclude_extensions = [".pkg", ".DS_Store"]
+    exclude_suffixes = [".md"]
+
+    if rel_path.name.startswith('.'):
+        return True
+    if rel_path.suffix in exclude_extensions:
+        return True
+    if any(rel_path.name.endswith(suffix) for suffix in exclude_suffixes):
+        return True
+    filename = rel_path.name.lower()
+    if filename == "makefile" or filename.startswith("storeassets") or filename.startswith("keys") or filename.startswith("test_"):
+        return True
+    for part in rel_path.parts:
+        if part in exclude_names:
+            return True
+    return False
+
+
 def create_zip():
     """Create the application zip file."""
     print(f"*** Creating {APPNAME}.zip ***")
@@ -141,54 +175,16 @@ def create_zip():
         for png_file in BASE_DIR.rglob("*.png"):
             if png_file.is_file():
                 arcname = png_file.relative_to(BASE_DIR)
+                if should_exclude_from_package(arcname):
+                    continue
                 zipf.write(png_file, arcname, compress_type=zipfile.ZIP_STORED)
-        
-        # Files and directories to exclude by name (exact matches in path parts)
-        # Note: "source" directory is required by Roku even if not used, so don't exclude it
-        exclude_names = [
-            "roku_build.py", "LICENSE", "openid-configuration.json",
-            ".github", ".vscode", "dist", "out", ".gitignore", ".git",
-            "test_deeplink.sh", "test_deeplink.py"
-        ]
-        
-        # File extensions and patterns to exclude
-        exclude_extensions = [".pkg", ".DS_Store"]
-        exclude_suffixes = [".md"]
         
         for file_path in BASE_DIR.rglob("*"):
             if file_path.is_file() and file_path.suffix != ".png":
-                # Check if file should be excluded
                 rel_path = file_path.relative_to(BASE_DIR)
-                should_exclude = False
-                
-                # Check if file name starts with dot (catches .gitignore, .github files, etc.)
-                if rel_path.name.startswith('.'):
-                    should_exclude = True
-                
-                # Check file extension
-                if not should_exclude:
-                    if file_path.suffix in exclude_extensions:
-                        should_exclude = True
-                    elif any(rel_path.name.endswith(suffix) for suffix in exclude_suffixes):
-                        should_exclude = True
-                
-                # Check if file name matches exclude patterns
-                if not should_exclude:
-                    filename = rel_path.name.lower()
-                    if filename == "makefile" or filename.startswith("storeassets") or filename.startswith("keys") or filename.startswith("test_"):
-                        should_exclude = True
-                
-                # Check if any parent directory or the file itself matches exclude_names
-                if not should_exclude:
-                    path_parts = rel_path.parts
-                    for part in path_parts:
-                        if part in exclude_names:
-                            should_exclude = True
-                            break
-                
-                if not should_exclude:
-                    arcname = rel_path
-                    zipf.write(file_path, arcname)
+                if should_exclude_from_package(rel_path):
+                    continue
+                zipf.write(file_path, rel_path)
     
     print(f"*** packaging {APPNAME} complete ***")
     return True
