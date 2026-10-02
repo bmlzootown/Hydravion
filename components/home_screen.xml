@@ -39,6 +39,7 @@
     <field id="selected_category" type="string" />
     <field id="deepcontentid" type="string" alwaysNotify="true" onChange="onDeepLinking"/>
     <field id="roinputdata" type="assocarray" onChange="onRoInput" />
+    <field id="memorypressure" type="assocarray" alwaysNotify="true" onChange="onMemoryPressure" />
   </interface>
   <script type="text/brightscript" uri="pkg:/components/home_screen.brs" />
 </component>

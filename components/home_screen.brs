@@ -148,6 +148,26 @@ sub onRoInput(obj)
   playDeepLinkTest()
 end sub
 
+sub onMemoryPressure(obj)
+  info = obj.getData()
+  if type(info) <> "roAssociativeArray" then return
+  level = info.level
+  if level <> "low" and level <> "critical" then return
+  clearImageCache()
+end sub
+
+sub clearImageCache()
+  fs = CreateObject("roFileSystem")
+  listing = fs.GetDirectoryListing("cachefs:/")
+  if listing = invalid then return
+  for each name in listing
+    path = name
+    if Left(name, 9) <> "cachefs:/" then path = "cachefs:/" + name
+    fs.Delete(path)
+  end for
+  print "[MEMORY] cleared image cache"
+end sub
+
 
 sub onNext(obj)
   nextValue = m.login_screen.next
