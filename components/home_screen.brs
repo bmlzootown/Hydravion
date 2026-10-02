@@ -1390,7 +1390,7 @@ sub doUpdateDialog(appInfo)
   m.top.getScene().dialog = createObject("roSGNode", "SimpleDialog")
   m.top.getScene().dialog.title = "Update " + appInfo.getVersion()
   m.top.getScene().dialog.showCancel = false
-  m.top.getScene().dialog.text = "- Fix token refresh issue (Issue #27)."
+  m.top.getScene().dialog.text = "Fix broken video attachments due to API changes."
   setupDialogPalette()
   m.top.getScene().dialog.observeField("buttonSelected","closeUpdateDialog")
 end sub
