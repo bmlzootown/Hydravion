@@ -26,6 +26,7 @@ function init()
   m.launchBeaconTimer.observeField("fire", "onLaunchBeaconTimer")
 
   m.itemFocus = 0
+  m.waitingForLiveAutoplay = false
 
   m.supported = m.device.GetSupportedGraphicsResolutions()
   
@@ -378,6 +379,11 @@ end sub
 sub isStreaming()
   m.isStreaming = true
   m.streamCheckTimer.control = "stop"
+  autoplayAfterWait = (m.waitingForLiveAutoplay = true)
+  if autoplayAfterWait
+    m.waitingForLiveAutoplay = false
+    doLive()
+  end if
   loadFeed(m.feed_url, m.feed_page)
   ? "Streaming: TRUE"
 end sub
@@ -824,6 +830,27 @@ sub doPlayButtonContinue()
   end if
 end sub
 
+sub watchStreamOrWaitForLive()
+  ' Watch Stream (options / play shortcut): play now if live, else poll existing stream check and auto-play when live.
+  if m.top.getScene().dialog <> invalid
+    m.top.getScene().dialog.close = true
+  end if
+  if m.stream_node = invalid
+    showMessageDialog("Error", "Individual channels do not currently support livestreams. Go back to subscription screen and select main subscription to watch livestreams.")
+    return
+  end if
+  if m.isStreaming = true
+    doLive()
+  else
+    if m.waitingForLiveAutoplay <> true
+      m.waitingForLiveAutoplay = true
+      showMessageDialog("Live stream", "Not live yet. We will start playback automatically when the stream goes live. Press OK to continue browsing this feed while you wait.")
+    end if
+    m.streamCheckTimer.control = "start"
+    checkStream()
+  end if
+end sub
+
 sub doLive()
   'Grab stream info from earlier
   streamInfo = m.stream_node
@@ -1208,7 +1235,7 @@ end sub
 sub handleOptions()
   'Determines which option was selected'
   if m.top.getScene().dialog.buttonSelected = 0
-    doLive()
+    watchStreamOrWaitForLive()
   else if m.top.getScene().dialog.buttonSelected = 1
     showLogoutDialog()
   end if
@@ -1229,7 +1256,7 @@ sub showLiveDialog()
   m.top.getScene().dialog.showCancel = false
   m.top.getScene().dialog.text = "Press OK to play stream"
   setupDialogPalette()
-  m.top.getScene().dialog.observeField("buttonSelected","doLive")
+  m.top.getScene().dialog.observeField("buttonSelected","watchStreamOrWaitForLive")
 end sub
 
 sub showMessageDialog(title, message)
@@ -1275,6 +1302,7 @@ end sub
 sub doLogout()
   ' Logs the user out and clears OAuth tokens
   m.top.getScene().dialog.close = true
+  m.waitingForLiveAutoplay = false
   
   ' Clear OAuth tokens using TokenUtil
   tokenUtilObj = TokenUtil()
@@ -1398,6 +1426,7 @@ function onKeyEvent(key, press) as Boolean
       m.playButtonPressed = false
       return true
     else if m.content_screen.visible
+      m.waitingForLiveAutoplay = false
       m.streamCheckTimer.control = "stop"
       m.itemFocus = 0
       m.content_screen.setField("itemIndex", 0)
