@@ -57,7 +57,7 @@ sub init()
       xfer.AsyncGetToFile("cachefs:/" + filename)
       filename = url
     else
-      filename = "cachefs:/" + url
+      filename = "cachefs:/" + filename
     end if
   
     return filename
